@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/store-items")
+@RequestMapping(ApiRoutes.STORE_ITEMS)
 @Tag(name = "Store Items")
 public class StoreItemController {
 

@@ -43,7 +43,7 @@ class StoreItemControllerIntegrationTest {
                 .author("Author")
                 .price(new BigDecimal("20.00"))
                 .build();
-        String resp = mockMvc.perform(post("/api/products")
+        String resp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(product)))
                 .andReturn().getResponse().getContentAsString();
@@ -52,7 +52,7 @@ class StoreItemControllerIntegrationTest {
 
     @Test
     void getAll_returnsOkWithList() throws Exception {
-        mockMvc.perform(get("/api/store-items"))
+        mockMvc.perform(get(ApiRoutes.STORE_ITEMS))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -64,7 +64,7 @@ class StoreItemControllerIntegrationTest {
                 .quantity(5)
                 .build();
 
-        mockMvc.perform(post("/api/store-items")
+        mockMvc.perform(post(ApiRoutes.STORE_ITEMS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
@@ -73,7 +73,7 @@ class StoreItemControllerIntegrationTest {
 
     @Test
     void getById_nonExistingId_returnsNotFound() throws Exception {
-        mockMvc.perform(get("/api/store-items/99999"))
+        mockMvc.perform(get(ApiRoutes.STORE_ITEMS + "/99999"))
                 .andExpect(status().isNotFound());
     }
 
@@ -84,7 +84,7 @@ class StoreItemControllerIntegrationTest {
                 .quantity(5)
                 .build();
 
-        String resp = mockMvc.perform(post("/api/store-items")
+        String resp = mockMvc.perform(post(ApiRoutes.STORE_ITEMS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andReturn().getResponse().getContentAsString();
@@ -95,7 +95,7 @@ class StoreItemControllerIntegrationTest {
                 .quantity(20)
                 .build();
 
-        mockMvc.perform(put("/api/store-items/{id}", id)
+        mockMvc.perform(put(ApiRoutes.STORE_ITEMS + "/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(updatedDto)))
                 .andExpect(status().isOk())
@@ -109,13 +109,13 @@ class StoreItemControllerIntegrationTest {
                 .quantity(3)
                 .build();
 
-        String resp = mockMvc.perform(post("/api/store-items")
+        String resp = mockMvc.perform(post(ApiRoutes.STORE_ITEMS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, StoreItemDto.class).getId();
 
-        mockMvc.perform(delete("/api/store-items/{id}", id))
+        mockMvc.perform(delete(ApiRoutes.STORE_ITEMS + "/{id}", id))
                 .andExpect(status().isNoContent());
     }
 }

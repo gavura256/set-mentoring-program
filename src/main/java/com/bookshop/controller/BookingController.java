@@ -22,7 +22,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/bookings")
+@RequestMapping(ApiRoutes.BOOKINGS)
 @Tag(name = "Bookings")
 public class BookingController {
 
