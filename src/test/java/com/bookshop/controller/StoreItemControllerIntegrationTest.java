@@ -38,10 +38,11 @@ class StoreItemControllerIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        ProductDto product = new ProductDto();
-        product.setTitle("Store Book");
-        product.setAuthor("Author");
-        product.setPrice(new BigDecimal("20.00"));
+        ProductDto product = ProductDto.builder()
+                .title("Store Book")
+                .author("Author")
+                .price(new BigDecimal("20.00"))
+                .build();
         String resp = mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(product)))
@@ -58,9 +59,10 @@ class StoreItemControllerIntegrationTest {
 
     @Test
     void create_validStoreItem_returnsCreated() throws Exception {
-        StoreItemDto dto = new StoreItemDto();
-        dto.setProductId(productId);
-        dto.setQuantity(5);
+        StoreItemDto dto = StoreItemDto.builder()
+                .productId(productId)
+                .quantity(5)
+                .build();
 
         mockMvc.perform(post("/api/store-items")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -77,9 +79,10 @@ class StoreItemControllerIntegrationTest {
 
     @Test
     void update_existingStoreItem_updatesQuantity() throws Exception {
-        StoreItemDto dto = new StoreItemDto();
-        dto.setProductId(productId);
-        dto.setQuantity(5);
+        StoreItemDto dto = StoreItemDto.builder()
+                .productId(productId)
+                .quantity(5)
+                .build();
 
         String resp = mockMvc.perform(post("/api/store-items")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -87,19 +90,24 @@ class StoreItemControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         Long id = objectMapper.readValue(resp, StoreItemDto.class).getId();
 
-        dto.setQuantity(20);
+        StoreItemDto updatedDto = StoreItemDto.builder()
+                .productId(productId)
+                .quantity(20)
+                .build();
+
         mockMvc.perform(put("/api/store-items/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(updatedDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.quantity").value(20));
     }
 
     @Test
     void delete_existingStoreItem_returnsNoContent() throws Exception {
-        StoreItemDto dto = new StoreItemDto();
-        dto.setProductId(productId);
-        dto.setQuantity(3);
+        StoreItemDto dto = StoreItemDto.builder()
+                .productId(productId)
+                .quantity(3)
+                .build();
 
         String resp = mockMvc.perform(post("/api/store-items")
                         .contentType(MediaType.APPLICATION_JSON)

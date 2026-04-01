@@ -27,10 +27,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ProductControllerIntegrationTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    ObjectMapper objectMapper;
 
     @Test
     void getAll_returnsOkWithList() throws Exception {
@@ -41,10 +41,11 @@ class ProductControllerIntegrationTest {
 
     @Test
     void create_validProduct_returnsCreated() throws Exception {
-        ProductDto dto = new ProductDto();
-        dto.setTitle("Test Book");
-        dto.setAuthor("Test Author");
-        dto.setPrice(new BigDecimal("19.99"));
+        ProductDto dto = ProductDto.builder()
+                .title("Test Book")
+                .author("Test Author")
+                .price(new BigDecimal("19.99"))
+                .build();
 
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -56,9 +57,10 @@ class ProductControllerIntegrationTest {
 
     @Test
     void create_missingTitle_returnsBadRequest() throws Exception {
-        ProductDto dto = new ProductDto();
-        dto.setAuthor("Author");
-        dto.setPrice(new BigDecimal("10.00"));
+        ProductDto dto = ProductDto.builder()
+                .author("Author")
+                .price(new BigDecimal("10.00"))
+                .build();
 
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -68,11 +70,11 @@ class ProductControllerIntegrationTest {
 
     @Test
     void getById_existingId_returnsOk() throws Exception {
-        // Create first
-        ProductDto dto = new ProductDto();
-        dto.setTitle("Get Book");
-        dto.setAuthor("Author");
-        dto.setPrice(new BigDecimal("15.00"));
+        ProductDto dto = ProductDto.builder()
+                .title("Get Book")
+                .author("Author")
+                .price(new BigDecimal("15.00"))
+                .build();
 
         String response = mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -95,10 +97,11 @@ class ProductControllerIntegrationTest {
 
     @Test
     void update_existingProduct_returnsOk() throws Exception {
-        ProductDto dto = new ProductDto();
-        dto.setTitle("Original");
-        dto.setAuthor("Author");
-        dto.setPrice(new BigDecimal("10.00"));
+        ProductDto dto = ProductDto.builder()
+                .title("Original")
+                .author("Author")
+                .price(new BigDecimal("10.00"))
+                .build();
 
         String response = mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,20 +110,26 @@ class ProductControllerIntegrationTest {
 
         Long id = objectMapper.readValue(response, ProductDto.class).getId();
 
-        dto.setTitle("Updated");
+        ProductDto updatedDto = ProductDto.builder()
+                .title("Updated")
+                .author("Author")
+                .price(new BigDecimal("10.00"))
+                .build();
+
         mockMvc.perform(put("/api/products/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(updatedDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Updated"));
     }
 
     @Test
     void delete_existingProduct_returnsNoContent() throws Exception {
-        ProductDto dto = new ProductDto();
-        dto.setTitle("To Delete");
-        dto.setAuthor("Author");
-        dto.setPrice(new BigDecimal("5.00"));
+        ProductDto dto = ProductDto.builder()
+                .title("To Delete")
+                .author("Author")
+                .price(new BigDecimal("5.00"))
+                .build();
 
         String response = mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)

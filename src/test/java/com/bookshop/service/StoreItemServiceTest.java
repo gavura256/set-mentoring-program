@@ -44,21 +44,24 @@ class StoreItemServiceTest {
 
     @BeforeEach
     void setUp() {
-        product = new Product();
-        product.setId(1L);
-        product.setTitle("Clean Code");
-        product.setAuthor("Robert C. Martin");
-        product.setPrice(new BigDecimal("29.99"));
+        product = Product.builder()
+                .id(1L)
+                .title("Clean Code")
+                .author("Robert C. Martin")
+                .price(new BigDecimal("29.99"))
+                .build();
 
-        storeItem = new StoreItem();
-        storeItem.setId(1L);
-        storeItem.setProduct(product);
-        storeItem.setQuantity(10);
+        storeItem = StoreItem.builder()
+                .id(1L)
+                .product(product)
+                .quantity(10)
+                .build();
 
-        storeItemDto = new StoreItemDto();
-        storeItemDto.setId(1L);
-        storeItemDto.setProductId(1L);
-        storeItemDto.setQuantity(10);
+        storeItemDto = StoreItemDto.builder()
+                .id(1L)
+                .productId(1L)
+                .quantity(10)
+                .build();
     }
 
     @Test
