@@ -4,7 +4,7 @@ import com.bookshop.dto.BookingDto;
 import com.bookshop.dto.ProductDto;
 import com.bookshop.dto.UserDto;
 import com.bookshop.model.enums.Role;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +31,7 @@ class BookingControllerIntegrationTest {
     MockMvc mockMvc;
 
     @Autowired
-    ObjectMapper objectMapper;
+    JsonUtils jsonUtils;
 
     private Long userId;
     private Long productId;
@@ -45,9 +45,9 @@ class BookingControllerIntegrationTest {
                 .build();
         String userResp = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
+                        .content(jsonUtils.toJson(user)))
                 .andReturn().getResponse().getContentAsString();
-        userId = objectMapper.readValue(userResp, UserDto.class).getId();
+        userId = jsonUtils.fromJson(userResp, UserDto.class).getId();
 
         ProductDto product = ProductDto.builder()
                 .title("Booking Book")
@@ -56,9 +56,9 @@ class BookingControllerIntegrationTest {
                 .build();
         String prodResp = mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(product)))
+                        .content(jsonUtils.toJson(product)))
                 .andReturn().getResponse().getContentAsString();
-        productId = objectMapper.readValue(prodResp, ProductDto.class).getId();
+        productId = jsonUtils.fromJson(prodResp, ProductDto.class).getId();
     }
 
     private BookingDto buildBookingDto() {
@@ -80,7 +80,7 @@ class BookingControllerIntegrationTest {
     void create_validBooking_returnsCreatedWithPendingStatus() throws Exception {
         mockMvc.perform(post("/api/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildBookingDto())))
+                        .content(jsonUtils.toJson(buildBookingDto())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("PENDING"));
     }
@@ -89,9 +89,9 @@ class BookingControllerIntegrationTest {
     void getById_existingBooking_returnsOk() throws Exception {
         String resp = mockMvc.perform(post("/api/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildBookingDto())))
+                        .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
-        Long id = objectMapper.readValue(resp, BookingDto.class).getId();
+        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
         mockMvc.perform(get("/api/bookings/{id}", id))
                 .andExpect(status().isOk())
@@ -108,9 +108,9 @@ class BookingControllerIntegrationTest {
     void updateStatus_pendingBooking_approvesSuccessfully() throws Exception {
         String resp = mockMvc.perform(post("/api/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildBookingDto())))
+                        .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
-        Long id = objectMapper.readValue(resp, BookingDto.class).getId();
+        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
         mockMvc.perform(patch("/api/bookings/{id}/status", id)
                         .param("status", "APPROVED"))
@@ -122,9 +122,9 @@ class BookingControllerIntegrationTest {
     void cancel_pendingBooking_returnsCancelledStatus() throws Exception {
         String resp = mockMvc.perform(post("/api/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildBookingDto())))
+                        .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
-        Long id = objectMapper.readValue(resp, BookingDto.class).getId();
+        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
         mockMvc.perform(patch("/api/bookings/{id}/cancel", id))
                 .andExpect(status().isOk())
@@ -135,9 +135,9 @@ class BookingControllerIntegrationTest {
     void delete_existingBooking_returnsNoContent() throws Exception {
         String resp = mockMvc.perform(post("/api/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildBookingDto())))
+                        .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
-        Long id = objectMapper.readValue(resp, BookingDto.class).getId();
+        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
         mockMvc.perform(delete("/api/bookings/{id}", id))
                 .andExpect(status().isNoContent());
@@ -147,7 +147,7 @@ class BookingControllerIntegrationTest {
     void getByUserId_existingUser_returnsBookings() throws Exception {
         mockMvc.perform(post("/api/bookings")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(buildBookingDto())));
+                .content(jsonUtils.toJson(buildBookingDto())));
 
         mockMvc.perform(get("/api/bookings/user/{userId}", userId))
                 .andExpect(status().isOk())

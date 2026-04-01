@@ -2,7 +2,7 @@ package com.bookshop.controller;
 
 import com.bookshop.dto.UserDto;
 import com.bookshop.model.enums.Role;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,7 +28,7 @@ class UserControllerIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonUtils jsonUtils;
 
     private UserDto buildUserDto(String email) {
         return UserDto.builder()
@@ -49,7 +49,7 @@ class UserControllerIntegrationTest {
     void create_validUser_returnsCreated() throws Exception {
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildUserDto("new@example.com"))))
+                        .content(jsonUtils.toJson(buildUserDto("new@example.com"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("new@example.com"))
                 .andExpect(jsonPath("$.role").value("CUSTOMER"));
@@ -61,11 +61,11 @@ class UserControllerIntegrationTest {
 
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)));
+                .content(jsonUtils.toJson(dto)));
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isConflict());
     }
 
@@ -79,10 +79,10 @@ class UserControllerIntegrationTest {
     void delete_existingUser_returnsNoContent() throws Exception {
         String response = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(buildUserDto("del@example.com"))))
+                        .content(jsonUtils.toJson(buildUserDto("del@example.com"))))
                 .andReturn().getResponse().getContentAsString();
 
-        Long id = objectMapper.readValue(response, UserDto.class).getId();
+        Long id = jsonUtils.fromJson(response, UserDto.class).getId();
 
         mockMvc.perform(delete("/api/users/{id}", id))
                 .andExpect(status().isNoContent());

@@ -2,7 +2,7 @@ package com.bookshop.controller;
 
 import com.bookshop.dto.ProductDto;
 import com.bookshop.dto.StoreItemDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ class StoreItemControllerIntegrationTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    private JsonUtils jsonUtils;
 
     private Long productId;
 
@@ -45,9 +45,9 @@ class StoreItemControllerIntegrationTest {
                 .build();
         String resp = mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(product)))
+                        .content(jsonUtils.toJson(product)))
                 .andReturn().getResponse().getContentAsString();
-        productId = objectMapper.readValue(resp, ProductDto.class).getId();
+        productId = jsonUtils.fromJson(resp, ProductDto.class).getId();
     }
 
     @Test
@@ -66,7 +66,7 @@ class StoreItemControllerIntegrationTest {
 
         mockMvc.perform(post("/api/store-items")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.quantity").value(5));
     }
@@ -86,9 +86,9 @@ class StoreItemControllerIntegrationTest {
 
         String resp = mockMvc.perform(post("/api/store-items")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(jsonUtils.toJson(dto)))
                 .andReturn().getResponse().getContentAsString();
-        Long id = objectMapper.readValue(resp, StoreItemDto.class).getId();
+        Long id = jsonUtils.fromJson(resp, StoreItemDto.class).getId();
 
         StoreItemDto updatedDto = StoreItemDto.builder()
                 .productId(productId)
@@ -97,7 +97,7 @@ class StoreItemControllerIntegrationTest {
 
         mockMvc.perform(put("/api/store-items/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedDto)))
+                        .content(jsonUtils.toJson(updatedDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.quantity").value(20));
     }
@@ -111,9 +111,9 @@ class StoreItemControllerIntegrationTest {
 
         String resp = mockMvc.perform(post("/api/store-items")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(jsonUtils.toJson(dto)))
                 .andReturn().getResponse().getContentAsString();
-        Long id = objectMapper.readValue(resp, StoreItemDto.class).getId();
+        Long id = jsonUtils.fromJson(resp, StoreItemDto.class).getId();
 
         mockMvc.perform(delete("/api/store-items/{id}", id))
                 .andExpect(status().isNoContent());
