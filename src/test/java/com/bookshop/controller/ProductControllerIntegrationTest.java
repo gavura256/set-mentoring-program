@@ -34,7 +34,7 @@ class ProductControllerIntegrationTest {
 
     @Test
     void getAll_returnsOkWithList() throws Exception {
-        mockMvc.perform(get("/api/products"))
+        mockMvc.perform(get(ApiRoutes.PRODUCTS))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -47,7 +47,7 @@ class ProductControllerIntegrationTest {
                 .price(new BigDecimal("19.99"))
                 .build();
 
-        mockMvc.perform(post("/api/products")
+        mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
@@ -62,7 +62,7 @@ class ProductControllerIntegrationTest {
                 .price(new BigDecimal("10.00"))
                 .build();
 
-        mockMvc.perform(post("/api/products")
+        mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isBadRequest());
@@ -76,7 +76,7 @@ class ProductControllerIntegrationTest {
                 .price(new BigDecimal("15.00"))
                 .build();
 
-        String response = mockMvc.perform(post("/api/products")
+        String response = mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
@@ -84,14 +84,14 @@ class ProductControllerIntegrationTest {
 
         Long id = jsonUtils.fromJson(response, ProductDto.class).getId();
 
-        mockMvc.perform(get("/api/products/{id}", id))
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Get Book"));
     }
 
     @Test
     void getById_nonExistingId_returnsNotFound() throws Exception {
-        mockMvc.perform(get("/api/products/99999"))
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/99999"))
                 .andExpect(status().isNotFound());
     }
 
@@ -103,7 +103,7 @@ class ProductControllerIntegrationTest {
                 .price(new BigDecimal("10.00"))
                 .build();
 
-        String response = mockMvc.perform(post("/api/products")
+        String response = mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andReturn().getResponse().getContentAsString();
@@ -116,7 +116,7 @@ class ProductControllerIntegrationTest {
                 .price(new BigDecimal("10.00"))
                 .build();
 
-        mockMvc.perform(put("/api/products/{id}", id)
+        mockMvc.perform(put(ApiRoutes.PRODUCTS + "/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(updatedDto)))
                 .andExpect(status().isOk())
@@ -131,17 +131,17 @@ class ProductControllerIntegrationTest {
                 .price(new BigDecimal("5.00"))
                 .build();
 
-        String response = mockMvc.perform(post("/api/products")
+        String response = mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andReturn().getResponse().getContentAsString();
 
         Long id = jsonUtils.fromJson(response, ProductDto.class).getId();
 
-        mockMvc.perform(delete("/api/products/{id}", id))
+        mockMvc.perform(delete(ApiRoutes.PRODUCTS + "/{id}", id))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/products/{id}", id))
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", id))
                 .andExpect(status().isNotFound());
     }
 }

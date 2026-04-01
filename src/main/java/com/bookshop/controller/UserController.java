@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping(ApiRoutes.USERS)
 @Tag(name = "Users")
 public class UserController {
 

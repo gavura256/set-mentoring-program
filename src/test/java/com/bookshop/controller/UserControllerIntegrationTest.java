@@ -40,14 +40,14 @@ class UserControllerIntegrationTest {
 
     @Test
     void getAll_returnsOkWithList() throws Exception {
-        mockMvc.perform(get("/api/users"))
+        mockMvc.perform(get(ApiRoutes.USERS))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
 
     @Test
     void create_validUser_returnsCreated() throws Exception {
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post(ApiRoutes.USERS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildUserDto("new@example.com"))))
                 .andExpect(status().isCreated())
@@ -59,11 +59,11 @@ class UserControllerIntegrationTest {
     void create_duplicateEmail_returnsConflict() throws Exception {
         UserDto dto = buildUserDto("dup@example.com");
 
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post(ApiRoutes.USERS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonUtils.toJson(dto)));
 
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post(ApiRoutes.USERS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isConflict());
@@ -71,20 +71,20 @@ class UserControllerIntegrationTest {
 
     @Test
     void getById_nonExistingId_returnsNotFound() throws Exception {
-        mockMvc.perform(get("/api/users/99999"))
+        mockMvc.perform(get(ApiRoutes.USERS + "/99999"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void delete_existingUser_returnsNoContent() throws Exception {
-        String response = mockMvc.perform(post("/api/users")
+        String response = mockMvc.perform(post(ApiRoutes.USERS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildUserDto("del@example.com"))))
                 .andReturn().getResponse().getContentAsString();
 
         Long id = jsonUtils.fromJson(response, UserDto.class).getId();
 
-        mockMvc.perform(delete("/api/users/{id}", id))
+        mockMvc.perform(delete(ApiRoutes.USERS + "/{id}", id))
                 .andExpect(status().isNoContent());
     }
 }

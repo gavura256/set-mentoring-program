@@ -43,7 +43,7 @@ class BookingControllerIntegrationTest {
                 .name("Booking User")
                 .role(Role.CUSTOMER)
                 .build();
-        String userResp = mockMvc.perform(post("/api/users")
+        String userResp = mockMvc.perform(post(ApiRoutes.USERS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(user)))
                 .andReturn().getResponse().getContentAsString();
@@ -54,7 +54,7 @@ class BookingControllerIntegrationTest {
                 .author("Author")
                 .price(new BigDecimal("25.00"))
                 .build();
-        String prodResp = mockMvc.perform(post("/api/products")
+        String prodResp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(product)))
                 .andReturn().getResponse().getContentAsString();
@@ -71,14 +71,14 @@ class BookingControllerIntegrationTest {
 
     @Test
     void getAll_returnsOkWithList() throws Exception {
-        mockMvc.perform(get("/api/bookings"))
+        mockMvc.perform(get(ApiRoutes.BOOKINGS))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
 
     @Test
     void create_validBooking_returnsCreatedWithPendingStatus() throws Exception {
-        mockMvc.perform(post("/api/bookings")
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andExpect(status().isCreated())
@@ -87,32 +87,32 @@ class BookingControllerIntegrationTest {
 
     @Test
     void getById_existingBooking_returnsOk() throws Exception {
-        String resp = mockMvc.perform(post("/api/bookings")
+        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
-        mockMvc.perform(get("/api/bookings/{id}", id))
+        mockMvc.perform(get(ApiRoutes.BOOKINGS + "/{id}", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(id));
     }
 
     @Test
     void getById_nonExistingId_returnsNotFound() throws Exception {
-        mockMvc.perform(get("/api/bookings/99999"))
+        mockMvc.perform(get(ApiRoutes.BOOKINGS + "/99999"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void updateStatus_pendingBooking_approvesSuccessfully() throws Exception {
-        String resp = mockMvc.perform(post("/api/bookings")
+        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
-        mockMvc.perform(patch("/api/bookings/{id}/status", id)
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}/status", id)
                         .param("status", "APPROVED"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APPROVED"));
@@ -120,36 +120,36 @@ class BookingControllerIntegrationTest {
 
     @Test
     void cancel_pendingBooking_returnsCancelledStatus() throws Exception {
-        String resp = mockMvc.perform(post("/api/bookings")
+        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
-        mockMvc.perform(patch("/api/bookings/{id}/cancel", id))
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}/cancel", id))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
     }
 
     @Test
     void delete_existingBooking_returnsNoContent() throws Exception {
-        String resp = mockMvc.perform(post("/api/bookings")
+        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
-        mockMvc.perform(delete("/api/bookings/{id}", id))
+        mockMvc.perform(delete(ApiRoutes.BOOKINGS + "/{id}", id))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void getByUserId_existingUser_returnsBookings() throws Exception {
-        mockMvc.perform(post("/api/bookings")
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonUtils.toJson(buildBookingDto())));
 
-        mockMvc.perform(get("/api/bookings/user/{userId}", userId))
+        mockMvc.perform(get(ApiRoutes.BOOKINGS + "/user/{userId}", userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
