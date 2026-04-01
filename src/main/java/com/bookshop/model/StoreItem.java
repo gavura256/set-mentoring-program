@@ -1,6 +1,9 @@
 package com.bookshop.model;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +17,9 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "store_items")
 public class StoreItem implements Serializable {

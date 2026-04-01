@@ -31,11 +31,11 @@ class UserControllerIntegrationTest {
     private ObjectMapper objectMapper;
 
     private UserDto buildUserDto(String email) {
-        UserDto dto = new UserDto();
-        dto.setEmail(email);
-        dto.setName("Test User");
-        dto.setRole(Role.CUSTOMER);
-        return dto;
+        return UserDto.builder()
+                .email(email)
+                .name("Test User")
+                .role(Role.CUSTOMER)
+                .build();
     }
 
     @Test

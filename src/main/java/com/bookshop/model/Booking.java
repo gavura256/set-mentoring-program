@@ -1,7 +1,10 @@
 package com.bookshop.model;
 
 import com.bookshop.model.enums.BookingStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +22,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "bookings")
 public class Booking implements Serializable {

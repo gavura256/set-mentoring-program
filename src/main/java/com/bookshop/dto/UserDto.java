@@ -3,7 +3,10 @@ package com.bookshop.dto;
 import com.bookshop.model.enums.Role;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -11,6 +14,9 @@ import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDto implements Serializable {
 

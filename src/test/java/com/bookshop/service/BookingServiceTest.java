@@ -54,32 +54,36 @@ class BookingServiceTest {
 
     @BeforeEach
     void setUp() {
-        user = new User();
-        user.setId(1L);
-        user.setEmail("john@example.com");
-        user.setName("John Doe");
-        user.setRole(Role.CUSTOMER);
+        user = User.builder()
+                .id(1L)
+                .email("john@example.com")
+                .name("John Doe")
+                .role(Role.CUSTOMER)
+                .build();
 
-        product = new Product();
-        product.setId(1L);
-        product.setTitle("Clean Code");
-        product.setAuthor("Robert C. Martin");
-        product.setPrice(new BigDecimal("29.99"));
+        product = Product.builder()
+                .id(1L)
+                .title("Clean Code")
+                .author("Robert C. Martin")
+                .price(new BigDecimal("29.99"))
+                .build();
 
-        booking = new Booking();
-        booking.setId(1L);
-        booking.setUser(user);
-        booking.setProduct(product);
-        booking.setQuantity(2);
-        booking.setStatus(BookingStatus.PENDING);
-        booking.setCreatedAt(LocalDateTime.now());
+        booking = Booking.builder()
+                .id(1L)
+                .user(user)
+                .product(product)
+                .quantity(2)
+                .status(BookingStatus.PENDING)
+                .createdAt(LocalDateTime.now())
+                .build();
 
-        bookingDto = new BookingDto();
-        bookingDto.setId(1L);
-        bookingDto.setUserId(1L);
-        bookingDto.setProductId(1L);
-        bookingDto.setQuantity(2);
-        bookingDto.setStatus(BookingStatus.PENDING);
+        bookingDto = BookingDto.builder()
+                .id(1L)
+                .userId(1L)
+                .productId(1L)
+                .quantity(2)
+                .status(BookingStatus.PENDING)
+                .build();
     }
 
     @Test

@@ -38,17 +38,19 @@ class ProductServiceTest {
 
     @BeforeEach
     void setUp() {
-        product = new Product();
-        product.setId(1L);
-        product.setTitle("Clean Code");
-        product.setAuthor("Robert C. Martin");
-        product.setPrice(new BigDecimal("29.99"));
+        product = Product.builder()
+                .id(1L)
+                .title("Clean Code")
+                .author("Robert C. Martin")
+                .price(new BigDecimal("29.99"))
+                .build();
 
-        productDto = new ProductDto();
-        productDto.setId(1L);
-        productDto.setTitle("Clean Code");
-        productDto.setAuthor("Robert C. Martin");
-        productDto.setPrice(new BigDecimal("29.99"));
+        productDto = ProductDto.builder()
+                .id(1L)
+                .title("Clean Code")
+                .author("Robert C. Martin")
+                .price(new BigDecimal("29.99"))
+                .build();
     }
 
     @Test
@@ -95,10 +97,11 @@ class ProductServiceTest {
 
     @Test
     void update_existingId_updatesAndReturnsDto() {
-        ProductDto updateDto = new ProductDto();
-        updateDto.setTitle("Updated");
-        updateDto.setAuthor("Author");
-        updateDto.setPrice(new BigDecimal("19.99"));
+        ProductDto updateDto = ProductDto.builder()
+                .title("Updated")
+                .author("Author")
+                .price(new BigDecimal("19.99"))
+                .build();
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(productRepository.save(product)).thenReturn(product);

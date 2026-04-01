@@ -2,13 +2,19 @@ package com.bookshop.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.io.Serializable;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class StoreItemDto implements Serializable {
 

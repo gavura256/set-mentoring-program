@@ -10,21 +10,21 @@ import org.springframework.stereotype.Component;
 public class BookingConverter {
 
     public BookingDto entityToDto(Booking booking) {
-        BookingDto dto = new BookingDto();
-        dto.setId(booking.getId());
-        dto.setUserId(booking.getUser().getId());
-        dto.setProductId(booking.getProduct().getId());
-        dto.setQuantity(booking.getQuantity());
-        dto.setStatus(booking.getStatus());
-        dto.setCreatedAt(booking.getCreatedAt());
-        return dto;
+        return BookingDto.builder()
+                .id(booking.getId())
+                .userId(booking.getUser().getId())
+                .productId(booking.getProduct().getId())
+                .quantity(booking.getQuantity())
+                .status(booking.getStatus())
+                .createdAt(booking.getCreatedAt())
+                .build();
     }
 
     public Booking dtoToEntity(BookingDto dto, User user, Product product) {
-        Booking booking = new Booking();
-        booking.setUser(user);
-        booking.setProduct(product);
-        booking.setQuantity(dto.getQuantity());
-        return booking;
+        return Booking.builder()
+                .user(user)
+                .product(product)
+                .quantity(dto.getQuantity())
+                .build();
     }
 }

@@ -28,30 +28,32 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class BookingControllerIntegrationTest {
 
     @Autowired
-    private MockMvc mockMvc;
+    MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    ObjectMapper objectMapper;
 
     private Long userId;
     private Long productId;
 
     @BeforeEach
     void setUp() throws Exception {
-        UserDto user = new UserDto();
-        user.setEmail("booking_user@example.com");
-        user.setName("Booking User");
-        user.setRole(Role.CUSTOMER);
+        UserDto user = UserDto.builder()
+                .email("booking_user@example.com")
+                .name("Booking User")
+                .role(Role.CUSTOMER)
+                .build();
         String userResp = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
                 .andReturn().getResponse().getContentAsString();
         userId = objectMapper.readValue(userResp, UserDto.class).getId();
 
-        ProductDto product = new ProductDto();
-        product.setTitle("Booking Book");
-        product.setAuthor("Author");
-        product.setPrice(new BigDecimal("25.00"));
+        ProductDto product = ProductDto.builder()
+                .title("Booking Book")
+                .author("Author")
+                .price(new BigDecimal("25.00"))
+                .build();
         String prodResp = mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(product)))
@@ -60,11 +62,11 @@ class BookingControllerIntegrationTest {
     }
 
     private BookingDto buildBookingDto() {
-        BookingDto dto = new BookingDto();
-        dto.setUserId(userId);
-        dto.setProductId(productId);
-        dto.setQuantity(1);
-        return dto;
+        return BookingDto.builder()
+                .userId(userId)
+                .productId(productId)
+                .quantity(1)
+                .build();
     }
 
     @Test

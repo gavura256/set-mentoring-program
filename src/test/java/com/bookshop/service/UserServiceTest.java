@@ -39,17 +39,19 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        user = new User();
-        user.setId(1L);
-        user.setEmail("john@example.com");
-        user.setName("John Doe");
-        user.setRole(Role.CUSTOMER);
+        user = User.builder()
+                .id(1L)
+                .email("john@example.com")
+                .name("John Doe")
+                .role(Role.CUSTOMER)
+                .build();
 
-        userDto = new UserDto();
-        userDto.setId(1L);
-        userDto.setEmail("john@example.com");
-        userDto.setName("John Doe");
-        userDto.setRole(Role.CUSTOMER);
+        userDto = UserDto.builder()
+                .id(1L)
+                .email("john@example.com")
+                .name("John Doe")
+                .role(Role.CUSTOMER)
+                .build();
     }
 
     @Test
