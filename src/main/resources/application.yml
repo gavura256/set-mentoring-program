@@ -1,7 +1,6 @@
 server:
   port: 8080
 
-#change profile to 'prod' if you want to use mysql database (don't forget to start related container using docker-compose up -d)
 spring:
   profiles:
     active: dev
@@ -11,12 +10,10 @@ spring:
     hibernate:
       format_sql: true
       show-sql: true
-      default_schema: appDb
 
 logging:
-  file: app.log
   level:
     com:
-      example: ERROR
-      org:
-        springframework: ERROR
+      bookshop: INFO
+    org:
+      springframework: ERROR

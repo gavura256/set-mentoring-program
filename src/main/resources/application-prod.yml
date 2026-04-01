@@ -1,14 +1,9 @@
 spring:
-  profiles: prod
   datasource:
     driverClassName: com.mysql.cj.jdbc.Driver
-    initialization-mode: always
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/appDb
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/bookshopDb
     username: root
-    password:
-
+    password: ${MYSQL_PASSWORD:password}
   jpa:
     hibernate:
       ddl-auto: update
-      dialect: org.hibernate.dialect.MySQLDialect
-
