@@ -33,7 +33,8 @@ public class StoreItemService {
     }
 
     public StoreItemDto findById(Long id) {
-        StoreItem item = storeItemRepository.findById(id)
+        StoreItem item =
+                storeItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("StoreItem not found with id: " + id));
         return storeItemConverter.entityToDto(item);
     }
