@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,9 +41,11 @@ public class BookingService {
     }
 
     public BookingDto findById(Long id) {
-        Booking booking = bookingRepository.findById(id)
+        return bookingRepository.findById(id)
+                .stream()
+                .findAny()
+                .map(bookingConverter::entityToDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
-        return bookingConverter.entityToDto(booking);
     }
 
     public List<BookingDto> findByUserId(Long userId) {
@@ -83,9 +86,9 @@ public class BookingService {
 
     @Transactional
     public void delete(Long id) {
-        if (!bookingRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Booking not found with id: " + id);
-        }
-        bookingRepository.deleteById(id);
+        bookingRepository.delete(
+                bookingRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id))
+        );
     }
 }
