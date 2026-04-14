@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -66,6 +67,15 @@ class UserServiceTest {
     }
 
     @Test
+    void findAll_returnsEmptyListWhenNoUsers() {
+        when(userRepository.findAll()).thenReturn(Collections.emptyList());
+
+        List<UserDto> result = userService.findAll();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void findById_existingId_returnsDto() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userConverter.entityToDto(user)).thenReturn(userDto);
@@ -73,6 +83,7 @@ class UserServiceTest {
         UserDto result = userService.findById(1L);
 
         assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getEmail()).isEqualTo("john@example.com");
     }
 
     @Test
@@ -80,7 +91,8 @@ class UserServiceTest {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.findById(99L))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
@@ -93,6 +105,7 @@ class UserServiceTest {
         UserDto result = userService.create(userDto);
 
         assertThat(result.getEmail()).isEqualTo("john@example.com");
+        verify(userRepository).save(user);
     }
 
     @Test
@@ -100,19 +113,40 @@ class UserServiceTest {
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(user));
 
         assertThatThrownBy(() -> userService.create(userDto))
-                .isInstanceOf(ResourceAlreadyExistsException.class);
+                .isInstanceOf(ResourceAlreadyExistsException.class)
+                .hasMessageContaining("john@example.com");
     }
 
+    // UserService.update() mutates the fetched entity in-place (setName, setEmail, setRole),
+    // so save() receives the same object reference — the stub matches correctly.
     @Test
     void update_existingId_updatesUser() {
+        UserDto updateDto = UserDto.builder()
+                .name("Jane Doe")
+                .email("jane@example.com")
+                .role(Role.MANAGER)
+                .build();
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
         when(userConverter.entityToDto(user)).thenReturn(userDto);
 
-        UserDto result = userService.update(1L, userDto);
+        UserDto result = userService.update(1L, updateDto);
 
+        assertThat(user.getName()).isEqualTo("Jane Doe");
+        assertThat(user.getEmail()).isEqualTo("jane@example.com");
+        assertThat(user.getRole()).isEqualTo(Role.MANAGER);
         assertThat(result).isNotNull();
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void update_nonExistingId_throwsNotFoundException() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.update(99L, userDto))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
@@ -129,6 +163,7 @@ class UserServiceTest {
         when(userRepository.existsById(99L)).thenReturn(false);
 
         assertThatThrownBy(() -> userService.delete(99L))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
     }
 }
