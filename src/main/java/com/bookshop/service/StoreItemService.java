@@ -2,6 +2,7 @@ package com.bookshop.service;
 
 import com.bookshop.converter.StoreItemConverter;
 import com.bookshop.dto.StoreItemDto;
+import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.Product;
 import com.bookshop.model.StoreItem;
@@ -41,6 +42,9 @@ public class StoreItemService {
 
     @Transactional
     public StoreItemDto create(StoreItemDto dto) {
+        if (storeItemRepository.findByProductId(dto.getProductId()).isPresent()) {
+            throw new ResourceAlreadyExistsException("StoreItem already exists for product id: " + dto.getProductId());
+        }
         Product product = productRepository.findById(dto.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + dto.getProductId()));
         StoreItem saved = storeItemRepository.save(storeItemConverter.dtoToEntity(dto, product));

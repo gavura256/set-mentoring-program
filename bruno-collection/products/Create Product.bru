@@ -1,0 +1,25 @@
+meta {
+  name: Create Product
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/products
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "title": "Clean Code",
+    "author": "Robert C. Martin",
+    "price": 29.99,
+    "description": "A handbook of agile software craftsmanship"
+  }
+}
