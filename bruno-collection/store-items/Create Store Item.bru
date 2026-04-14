@@ -1,0 +1,23 @@
+meta {
+  name: Create Store Item
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/store-items
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "productId": 1,
+    "quantity": 10
+  }
+}

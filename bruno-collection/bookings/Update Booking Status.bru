@@ -1,0 +1,19 @@
+meta {
+  name: Update Booking Status
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/api/bookings/1/status
+  body: none
+  auth: none
+}
+
+params:query {
+  status: APPROVED
+}
+
+headers {
+  Accept: application/json
+}

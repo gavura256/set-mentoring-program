@@ -1,0 +1,24 @@
+meta {
+  name: Create Booking
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/bookings
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "userId": 1,
+    "productId": 1,
+    "quantity": 2
+  }
+}

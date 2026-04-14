@@ -29,7 +29,7 @@ public class StoreItem implements Serializable {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "product_id", nullable = false, unique = true)
     private Product product;
 
     @Column(nullable = false)

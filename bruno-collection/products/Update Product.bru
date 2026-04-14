@@ -1,0 +1,25 @@
+meta {
+  name: Update Product
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/products/1
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "title": "Clean Code (2nd Ed.)",
+    "author": "Robert C. Martin",
+    "price": 34.99,
+    "description": "Updated edition"
+  }
+}
