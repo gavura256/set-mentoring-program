@@ -6,6 +6,8 @@ import com.bookshop.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,8 +33,8 @@ public class BookingController {
 
     @GetMapping
     @Operation(summary = "Get all bookings")
-    public List<BookingDto> getAll() {
-        return bookingService.findAll();
+    public List<BookingDto> getAll(@PageableDefault(size = 20) Pageable pageable) {
+        return bookingService.findAll(pageable);
     }
 
     @GetMapping("/{id}")
@@ -41,6 +43,7 @@ public class BookingController {
         return bookingService.findById(id);
     }
 
+    // TODO: requires auth (#3) — IDOR: any caller can read any user's bookings
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get bookings by user ID")
     public List<BookingDto> getByUserId(@PathVariable Long userId) {
@@ -54,6 +57,7 @@ public class BookingController {
         return bookingService.create(dto);
     }
 
+    // TODO: requires auth (#3) — no role check; customers can approve own bookings
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update booking status (APPROVED / REJECTED)")
     public BookingDto updateStatus(@PathVariable Long id, @RequestParam BookingStatus status) {

@@ -4,8 +4,8 @@ spring:
       on-profile: prod
   datasource:
     url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/appDb
-    username: myUser
-    password: myUser
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update

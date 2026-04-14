@@ -5,11 +5,12 @@ import com.bookshop.dto.UserDto;
 import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.User;
+import com.bookshop.model.enums.Role;
 import com.bookshop.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,12 +23,14 @@ public class UserService {
     @Autowired
     private UserConverter userConverter;
 
+    @Transactional(readOnly = true)
     public List<UserDto> findAll() {
         return userRepository.findAll().stream()
                 .map(userConverter::entityToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public UserDto findById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -37,7 +40,10 @@ public class UserService {
     @Transactional
     public UserDto create(UserDto dto) {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new ResourceAlreadyExistsException("User already exists with email: " + dto.getEmail());
+            throw new ResourceAlreadyExistsException("An account with this email already exists");
+        }
+        if (dto.getRole() == null) {
+            dto.setRole(Role.CUSTOMER);
         }
         User saved = userRepository.save(userConverter.dtoToEntity(dto));
         return userConverter.entityToDto(saved);

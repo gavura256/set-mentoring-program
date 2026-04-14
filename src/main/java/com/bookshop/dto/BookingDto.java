@@ -2,6 +2,7 @@ package com.bookshop.dto;
 
 import com.bookshop.model.enums.BookingStatus;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +21,7 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BookingDto implements Serializable {
 
-    @Schema(description = "Booking ID", example = "1")
+    @Schema(description = "Booking ID", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
 
     @NotNull
@@ -36,9 +37,11 @@ public class BookingDto implements Serializable {
     @Schema(description = "Quantity to book", example = "2", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer quantity;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Schema(description = "Booking status", example = "PENDING")
     private BookingStatus status;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     @Schema(description = "Booking creation timestamp")
     private LocalDateTime createdAt;
 }

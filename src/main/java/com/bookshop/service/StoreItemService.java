@@ -10,8 +10,8 @@ import com.bookshop.repository.ProductRepository;
 import com.bookshop.repository.StoreItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,15 +27,16 @@ public class StoreItemService {
     @Autowired
     private StoreItemConverter storeItemConverter;
 
+    @Transactional(readOnly = true)
     public List<StoreItemDto> findAll() {
         return storeItemRepository.findAll().stream()
                 .map(storeItemConverter::entityToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public StoreItemDto findById(Long id) {
-        StoreItem item =
-                storeItemRepository.findById(id)
+        StoreItem item = storeItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("StoreItem not found with id: " + id));
         return storeItemConverter.entityToDto(item);
     }

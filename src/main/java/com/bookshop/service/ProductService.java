@@ -6,9 +6,9 @@ import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.Product;
 import com.bookshop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,12 +22,14 @@ public class ProductService {
     @Autowired
     private ProductConverter productConverter;
 
-    public List<ProductDto> findAll() {
-        return productRepository.findAll().stream()
+    @Transactional(readOnly = true)
+    public List<ProductDto> findAll(Pageable pageable) {
+        return productRepository.findAll(pageable).getContent().stream()
                 .map(productConverter::entityToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public ProductDto findById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
@@ -56,8 +58,8 @@ public class ProductService {
 
     @Transactional
     public void delete(Long id) {
-        productRepository.delete(
-                productRepository.findById(id)
-                        .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id)));
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        productRepository.delete(product);
     }
 }
