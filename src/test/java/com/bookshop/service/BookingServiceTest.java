@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -74,7 +75,7 @@ class BookingServiceTest {
                 .product(product)
                 .quantity(2)
                 .status(BookingStatus.PENDING)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.of(2024, 1, 1, 12, 0))
                 .build();
 
         bookingDto = BookingDto.builder()
@@ -98,6 +99,15 @@ class BookingServiceTest {
     }
 
     @Test
+    void findAll_returnsEmptyListWhenNoBookings() {
+        when(bookingRepository.findAll()).thenReturn(Collections.emptyList());
+
+        List<BookingDto> result = bookingService.findAll();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void findById_existingId_returnsDto() {
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
         when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
@@ -105,6 +115,7 @@ class BookingServiceTest {
         BookingDto result = bookingService.findById(1L);
 
         assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getStatus()).isEqualTo(BookingStatus.PENDING);
     }
 
     @Test
@@ -112,7 +123,8 @@ class BookingServiceTest {
         when(bookingRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.findById(99L))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
@@ -127,6 +139,15 @@ class BookingServiceTest {
     }
 
     @Test
+    void findByUserId_nonExistingUser_throwsNotFoundException() {
+        when(userRepository.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> bookingService.findByUserId(99L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
+    }
+
+    @Test
     void create_validDto_setsStatusPendingAndSaves() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
@@ -137,17 +158,29 @@ class BookingServiceTest {
         BookingDto result = bookingService.create(bookingDto);
 
         assertThat(result).isNotNull();
-        verify(bookingRepository).save(booking);
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.PENDING);
+        verify(bookingRepository).save(booking);
     }
 
     @Test
     void create_nonExistingUser_throwsNotFoundException() {
-        when(userRepository.findById(99L)).thenReturn(Optional.empty());
         bookingDto.setUserId(99L);
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.create(bookingDto))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
+    }
+
+    @Test
+    void create_nonExistingProduct_throwsNotFoundException() {
+        bookingDto.setProductId(99L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bookingService.create(bookingDto))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
@@ -160,6 +193,15 @@ class BookingServiceTest {
 
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.APPROVED);
         verify(bookingRepository).save(booking);
+    }
+
+    @Test
+    void updateStatus_nonExistingId_throwsNotFoundException() {
+        when(bookingRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> bookingService.updateStatus(99L, BookingStatus.APPROVED))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
     }
 
     @Test
@@ -183,19 +225,31 @@ class BookingServiceTest {
     }
 
     @Test
+    void cancel_cancelledBooking_throwsInvalidOperationException() {
+        booking.setStatus(BookingStatus.CANCELLED);
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.cancel(1L))
+                .isInstanceOf(InvalidOperationException.class);
+    }
+
+    // BookingService.delete() resolves the entity via findById first, then calls
+    // delete(entity) — not existsById + deleteById.
+    @Test
     void delete_existingId_deletesBooking() {
-        when(bookingRepository.existsById(1L)).thenReturn(true);
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
 
         bookingService.delete(1L);
 
-        verify(bookingRepository).deleteById(1L);
+        verify(bookingRepository).delete(booking);
     }
 
     @Test
     void delete_nonExistingId_throwsNotFoundException() {
-        when(bookingRepository.existsById(99L)).thenReturn(false);
+        when(bookingRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.delete(99L))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
     }
 }

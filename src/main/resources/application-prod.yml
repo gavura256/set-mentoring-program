@@ -1,9 +1,11 @@
 spring:
+  config:
+    activate:
+      on-profile: prod
   datasource:
-    driverClassName: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/bookshopDb
-    username: root
-    password: ${MYSQL_PASSWORD:password}
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/appDb
+    username: myUser
+    password: myUser
   jpa:
     hibernate:
       ddl-auto: update

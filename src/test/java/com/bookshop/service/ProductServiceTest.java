@@ -8,16 +8,19 @@ import com.bookshop.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -65,6 +68,15 @@ class ProductServiceTest {
     }
 
     @Test
+    void findAll_returnsEmptyListWhenNoProducts() {
+        when(productRepository.findAll()).thenReturn(Collections.emptyList());
+
+        List<ProductDto> result = productService.findAll();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void findById_existingId_returnsDto() {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(productConverter.entityToDto(product)).thenReturn(productDto);
@@ -72,6 +84,7 @@ class ProductServiceTest {
         ProductDto result = productService.findById(1L);
 
         assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getTitle()).isEqualTo("Clean Code");
     }
 
     @Test
@@ -96,21 +109,27 @@ class ProductServiceTest {
     }
 
     @Test
-    void update_existingId_updatesAndReturnsDto() {
+    void update_existingId_updatesFieldsAndReturnsDto() {
         ProductDto updateDto = ProductDto.builder()
-                .title("Updated")
-                .author("Author")
+                .title("Updated Title")
+                .author("Updated Author")
                 .price(new BigDecimal("19.99"))
                 .build();
 
+        ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
+
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(productRepository.save(product)).thenReturn(product);
+        when(productRepository.save(any(Product.class))).thenReturn(product);
         when(productConverter.entityToDto(product)).thenReturn(productDto);
 
         ProductDto result = productService.update(1L, updateDto);
 
+        verify(productRepository).save(captor.capture());
+        assertThat(captor.getValue().getId()).isEqualTo(1L);
+        assertThat(captor.getValue().getTitle()).isEqualTo("Updated Title");
+        assertThat(captor.getValue().getAuthor()).isEqualTo("Updated Author");
+        assertThat(captor.getValue().getPrice()).isEqualByComparingTo("19.99");
         assertThat(result).isNotNull();
-        verify(productRepository).save(product);
     }
 
     @Test
@@ -118,23 +137,27 @@ class ProductServiceTest {
         when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> productService.update(99L, productDto))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
     }
 
+    // ProductService.delete() resolves the entity via findById first, then calls
+    // delete(entity) — not existsById + deleteById.
     @Test
     void delete_existingId_deletesProduct() {
-        when(productRepository.existsById(1L)).thenReturn(true);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
 
         productService.delete(1L);
 
-        verify(productRepository).deleteById(1L);
+        verify(productRepository).delete(product);
     }
 
     @Test
     void delete_nonExistingId_throwsNotFoundException() {
-        when(productRepository.existsById(99L)).thenReturn(false);
+        when(productRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> productService.delete(99L))
-                .isInstanceOf(ResourceNotFoundException.class);
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("99");
     }
 }
