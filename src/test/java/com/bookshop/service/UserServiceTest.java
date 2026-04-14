@@ -114,7 +114,7 @@ class UserServiceTest {
 
         assertThatThrownBy(() -> userService.create(userDto))
                 .isInstanceOf(ResourceAlreadyExistsException.class)
-                .hasMessageContaining("john@example.com");
+                .hasMessageContaining("An account with this email already exists");
     }
 
     // UserService.update() mutates the fetched entity in-place (setName, setEmail, setRole),
