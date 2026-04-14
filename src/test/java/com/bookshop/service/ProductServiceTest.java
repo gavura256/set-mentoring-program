@@ -13,6 +13,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
@@ -58,10 +62,11 @@ class ProductServiceTest {
 
     @Test
     void findAll_returnsAllProducts() {
-        when(productRepository.findAll()).thenReturn(List.of(product));
+        Page<Product> page = new PageImpl<>(List.of(product));
+        when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
         when(productConverter.entityToDto(product)).thenReturn(productDto);
 
-        List<ProductDto> result = productService.findAll();
+        List<ProductDto> result = productService.findAll(Pageable.unpaged());
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getTitle()).isEqualTo("Clean Code");
@@ -69,9 +74,9 @@ class ProductServiceTest {
 
     @Test
     void findAll_returnsEmptyListWhenNoProducts() {
-        when(productRepository.findAll()).thenReturn(Collections.emptyList());
+        when(productRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
 
-        List<ProductDto> result = productService.findAll();
+        List<ProductDto> result = productService.findAll(Pageable.unpaged());
 
         assertThat(result).isEmpty();
     }

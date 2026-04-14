@@ -18,6 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,6 +30,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -89,10 +93,11 @@ class BookingServiceTest {
 
     @Test
     void findAll_returnsAllBookings() {
-        when(bookingRepository.findAll()).thenReturn(List.of(booking));
+        Page<Booking> page = new PageImpl<>(List.of(booking));
+        when(bookingRepository.findAllWithFetch(any(Pageable.class))).thenReturn(page);
         when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
 
-        List<BookingDto> result = bookingService.findAll();
+        List<BookingDto> result = bookingService.findAll(Pageable.unpaged());
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getStatus()).isEqualTo(BookingStatus.PENDING);
@@ -100,9 +105,9 @@ class BookingServiceTest {
 
     @Test
     void findAll_returnsEmptyListWhenNoBookings() {
-        when(bookingRepository.findAll()).thenReturn(Collections.emptyList());
+        when(bookingRepository.findAllWithFetch(any(Pageable.class))).thenReturn(Page.empty());
 
-        List<BookingDto> result = bookingService.findAll();
+        List<BookingDto> result = bookingService.findAll(Pageable.unpaged());
 
         assertThat(result).isEmpty();
     }
@@ -129,8 +134,8 @@ class BookingServiceTest {
 
     @Test
     void findByUserId_existingUser_returnsBookings() {
-        when(userRepository.existsById(1L)).thenReturn(true);
-        when(bookingRepository.findByUserId(1L)).thenReturn(List.of(booking));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(bookingRepository.findByUserIdWithFetch(1L)).thenReturn(List.of(booking));
         when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
 
         List<BookingDto> result = bookingService.findByUserId(1L);
@@ -140,7 +145,7 @@ class BookingServiceTest {
 
     @Test
     void findByUserId_nonExistingUser_throwsNotFoundException() {
-        when(userRepository.existsById(99L)).thenReturn(false);
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.findByUserId(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
