@@ -11,6 +11,8 @@ spring:
     console:
       enabled: true
       path: /h2-console
+      settings:
+        web-allow-others: false
   jpa:
     hibernate:
       #change ddl-auto to 'update' if you don't want to clean data each time

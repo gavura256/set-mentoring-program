@@ -12,9 +12,9 @@ import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.ProductRepository;
 import com.bookshop.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,25 +34,26 @@ public class BookingService {
     @Autowired
     private BookingConverter bookingConverter;
 
-    public List<BookingDto> findAll() {
-        return bookingRepository.findAll().stream()
+    @Transactional(readOnly = true)
+    public List<BookingDto> findAll(Pageable pageable) {
+        return bookingRepository.findAllWithFetch(pageable).getContent().stream()
                 .map(bookingConverter::entityToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public BookingDto findById(Long id) {
         return bookingRepository.findById(id)
-                .stream()
-                .findAny()
                 .map(bookingConverter::entityToDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
     }
 
+    @Transactional(readOnly = true)
     public List<BookingDto> findByUserId(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("User not found with id: " + userId);
-        }
-        return bookingRepository.findByUserId(userId).stream()
+        // TODO: requires auth (#3) — IDOR: any caller can read any user's bookings
+        userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        return bookingRepository.findByUserIdWithFetch(userId).stream()
                 .map(bookingConverter::entityToDto)
                 .collect(Collectors.toList());
     }
@@ -70,6 +71,7 @@ public class BookingService {
 
     @Transactional
     public BookingDto updateStatus(Long id, BookingStatus status) {
+        // TODO: requires auth (#3) — no role check; customers can approve own bookings
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
         if (booking.getStatus() == BookingStatus.CANCELLED) {

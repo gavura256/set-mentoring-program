@@ -1,5 +1,6 @@
 package com.bookshop.util;
 
+import com.bookshop.exception.JsonSerializationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
@@ -17,7 +18,7 @@ public class JsonUtils {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new JsonSerializationException("Failed to serialize object to JSON", e);
         }
     }
 
@@ -25,7 +26,7 @@ public class JsonUtils {
         try {
             return objectMapper.readValue(json, clazz);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new JsonSerializationException("Failed to deserialize JSON to " + clazz.getSimpleName(), e);
         }
     }
 }
