@@ -1,8 +1,8 @@
 -- Users
-INSERT INTO users (email, name, role, password) VALUES ('john.doe@example.com', 'John Doe', 'CUSTOMER', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
-INSERT INTO users (email, name, role, password) VALUES ('jane.smith@example.com', 'Jane Smith', 'CUSTOMER', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
-INSERT INTO users (email, name, role, password) VALUES ('admin@bookshop.com', 'Admin User', 'ADMINISTRATOR', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
-INSERT INTO users (email, name, role, password) VALUES ('manager@bookshop.com', 'Store Manager', 'MANAGER', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+INSERT INTO users (email, name, role, password) VALUES ('john.doe@example.com', 'John Doe', 'CUSTOMER', '$2a$10$Uf.Vf0njzII/YDD6lWLKzePkgskC/k25jsy6Z2aQoi84fqGZRy8Vm');
+INSERT INTO users (email, name, role, password) VALUES ('jane.smith@example.com', 'Jane Smith', 'CUSTOMER', '$2a$10$Uf.Vf0njzII/YDD6lWLKzePkgskC/k25jsy6Z2aQoi84fqGZRy8Vm');
+INSERT INTO users (email, name, role, password) VALUES ('admin@bookshop.com', 'Admin User', 'ADMINISTRATOR', '$2a$10$Uf.Vf0njzII/YDD6lWLKzePkgskC/k25jsy6Z2aQoi84fqGZRy8Vm');
+INSERT INTO users (email, name, role, password) VALUES ('manager@bookshop.com', 'Store Manager', 'MANAGER', '$2a$10$Uf.Vf0njzII/YDD6lWLKzePkgskC/k25jsy6Z2aQoi84fqGZRy8Vm');
 
 -- Products
 INSERT INTO products (title, author, price, description)
