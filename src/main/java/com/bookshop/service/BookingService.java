@@ -50,7 +50,6 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public List<BookingDto> findByUserId(Long userId) {
-        // TODO: requires auth (#3) — IDOR: any caller can read any user's bookings
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         return bookingRepository.findByUserIdWithFetch(userId).stream()
@@ -71,7 +70,6 @@ public class BookingService {
 
     @Transactional
     public BookingDto updateStatus(Long id, BookingStatus status) {
-        // TODO: requires auth (#3) — no role check; customers can approve own bookings
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
         if (booking.getStatus() == BookingStatus.CANCELLED) {
@@ -92,5 +90,12 @@ public class BookingService {
                 bookingRepository.findById(id)
                         .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id))
         );
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isOwner(Long bookingId, Long userId) {
+        return bookingRepository.findById(bookingId)
+                .map(booking -> booking.getUser().getId().equals(userId))
+                .orElse(false);
     }
 }

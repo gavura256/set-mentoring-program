@@ -1,6 +1,12 @@
 server:
   port: 8080
 
+app:
+  security:
+    jwt:
+      secret: "devSecretKey-32bytes-or-longer!!"   # override via env in prod
+      expiration-ms: 86400000  # 24h
+
 #change profile to 'prod' if you want to use mysql database (don't forget to start related container using docker-compose up -d)
 spring:
   profiles:

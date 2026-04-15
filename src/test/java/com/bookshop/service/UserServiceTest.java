@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,6 +24,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+@ExtendWith(SpringExtension.class)
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
@@ -31,6 +36,9 @@ class UserServiceTest {
 
     @Mock
     private UserConverter userConverter;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private UserService userService;
@@ -96,9 +104,11 @@ class UserServiceTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
     void create_newEmail_returnsCreatedDto() {
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.empty());
         when(userConverter.dtoToEntity(userDto)).thenReturn(user);
+        when(passwordEncoder.encode("password")).thenReturn("encoded");
         when(userRepository.save(user)).thenReturn(user);
         when(userConverter.entityToDto(user)).thenReturn(userDto);
 
@@ -120,6 +130,7 @@ class UserServiceTest {
     // UserService.update() mutates the fetched entity in-place (setName, setEmail, setRole),
     // so save() receives the same object reference — the stub matches correctly.
     @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
     void update_existingId_updatesUser() {
         UserDto updateDto = UserDto.builder()
                 .name("Jane Doe")

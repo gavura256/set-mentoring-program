@@ -1,4 +1,4 @@
-package com.bookshop.dto;
+package com.bookshop.dto.error;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

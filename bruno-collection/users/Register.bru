@@ -1,11 +1,11 @@
 meta {
-  name: Create User
+  name: Register
   type: http
-  seq: 3
+  seq: 2
 }
 
 post {
-  url: {{baseUrl}}/api/users
+  url: {{baseUrl}}/api/auth/register
   body: json
   auth: none
 }
@@ -17,8 +17,8 @@ headers {
 
 body:json {
   {
-    "email": "john@example.com",
-    "name": "John Doe",
-    "role": "CUSTOMER"
+    "email": "new.user@example.com",
+    "name": "New User",
+    "password": "password"
   }
 }

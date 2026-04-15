@@ -32,7 +32,9 @@ public class UserDto implements Serializable {
     @Schema(description = "User full name", example = "John Doe", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @Schema(description = "User password", example = "password", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    private String password;
+
     @Schema(description = "User role", example = "CUSTOMER")
     private Role role;
 }
