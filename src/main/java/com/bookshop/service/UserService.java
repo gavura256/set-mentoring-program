@@ -8,6 +8,10 @@ import com.bookshop.model.User;
 import com.bookshop.model.enums.Role;
 import com.bookshop.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +26,9 @@ public class UserService {
 
     @Autowired
     private UserConverter userConverter;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
     public List<UserDto> findAll() {
@@ -42,10 +49,24 @@ public class UserService {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new ResourceAlreadyExistsException("An account with this email already exists");
         }
-        if (dto.getRole() == null) {
-            dto.setRole(Role.CUSTOMER);
+
+        User user = userConverter.dtoToEntity(dto);
+
+        // Only ADMINISTRATOR can specify a role during creation
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.isAuthenticated() &&
+                auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRATOR"));
+
+        if (!isAdmin || user.getRole() == null) {
+            user.setRole(Role.CUSTOMER);
         }
-        User saved = userRepository.save(userConverter.dtoToEntity(dto));
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        } else {
+            user.setPassword(passwordEncoder.encode("password"));
+        }
+        User saved = userRepository.save(user);
         return userConverter.entityToDto(saved);
     }
 
@@ -53,9 +74,25 @@ public class UserService {
     public UserDto update(Long id, UserDto dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        // Role update logic: ONLY ADMINISTRATOR can change a user's role
+        if (dto.getRole() != null && dto.getRole() != user.getRole()) {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth != null && auth.isAuthenticated() &&
+                    auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRATOR"));
+
+            if (!isAdmin) {
+                throw new AccessDeniedException("Only an Administrator can change user roles");
+            }
+            user.setRole(dto.getRole());
+        }
+
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
-        user.setRole(dto.getRole());
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        }
         return userConverter.entityToDto(userRepository.save(user));
     }
 

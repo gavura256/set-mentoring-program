@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,11 +35,13 @@ class UserControllerIntegrationTest {
         return UserDto.builder()
                 .email(email)
                 .name("Test User")
+                .password("password")
                 .role(Role.CUSTOMER)
                 .build();
     }
 
     @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
     void getAll_returnsOkWithList() throws Exception {
         mockMvc.perform(get(ApiRoutes.USERS))
                 .andExpect(status().isOk())
@@ -46,38 +49,16 @@ class UserControllerIntegrationTest {
     }
 
     @Test
-    void create_validUser_returnsCreated() throws Exception {
-        mockMvc.perform(post(ApiRoutes.USERS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(buildUserDto("new@example.com"))))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value("new@example.com"))
-                .andExpect(jsonPath("$.role").value("CUSTOMER"));
-    }
-
-    @Test
-    void create_duplicateEmail_returnsConflict() throws Exception {
-        UserDto dto = buildUserDto("dup@example.com");
-
-        mockMvc.perform(post(ApiRoutes.USERS)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonUtils.toJson(dto)));
-
-        mockMvc.perform(post(ApiRoutes.USERS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(dto)))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
     void getById_nonExistingId_returnsNotFound() throws Exception {
         mockMvc.perform(get(ApiRoutes.USERS + "/99999"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
     void delete_existingUser_returnsNoContent() throws Exception {
-        String response = mockMvc.perform(post(ApiRoutes.USERS)
+        String response = mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildUserDto("del@example.com"))))
                 .andReturn().getResponse().getContentAsString();

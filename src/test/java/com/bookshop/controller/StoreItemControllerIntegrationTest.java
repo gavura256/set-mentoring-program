@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,7 @@ class StoreItemControllerIntegrationTest {
                 .price(new BigDecimal("20.00"))
                 .build();
         String resp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin").roles("MANAGER"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(product)))
                 .andReturn().getResponse().getContentAsString();
@@ -51,6 +53,7 @@ class StoreItemControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "CUSTOMER")
     void getAll_returnsOkWithList() throws Exception {
         mockMvc.perform(get(ApiRoutes.STORE_ITEMS))
                 .andExpect(status().isOk())
@@ -58,6 +61,7 @@ class StoreItemControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     void create_validStoreItem_returnsCreated() throws Exception {
         StoreItemDto dto = StoreItemDto.builder()
                 .productId(productId)
@@ -72,12 +76,14 @@ class StoreItemControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "CUSTOMER")
     void getById_nonExistingId_returnsNotFound() throws Exception {
         mockMvc.perform(get(ApiRoutes.STORE_ITEMS + "/99999"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     void update_existingStoreItem_updatesQuantity() throws Exception {
         StoreItemDto dto = StoreItemDto.builder()
                 .productId(productId)
@@ -103,6 +109,7 @@ class StoreItemControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
     void delete_existingStoreItem_returnsNoContent() throws Exception {
         StoreItemDto dto = StoreItemDto.builder()
                 .productId(productId)

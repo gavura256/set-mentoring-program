@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 @RestController
@@ -44,12 +45,14 @@ public class ProductController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new product")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public ProductDto create(@Valid @RequestBody ProductDto dto) {
         return productService.create(dto);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a product")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public ProductDto update(@PathVariable Long id, @Valid @RequestBody ProductDto dto) {
         return productService.update(id, dto);
     }
@@ -57,6 +60,7 @@ public class ProductController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a product")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public void delete(@PathVariable Long id) {
         productService.delete(id);
     }

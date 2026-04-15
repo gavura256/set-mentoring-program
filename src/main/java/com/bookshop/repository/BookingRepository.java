@@ -13,8 +13,6 @@ import java.util.List;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    List<Booking> findByUserId(Long userId);
-
     @Query("SELECT b FROM Booking b JOIN FETCH b.user JOIN FETCH b.product")
     Page<Booking> findAllWithFetch(Pageable pageable);
 

@@ -20,6 +20,7 @@ public class UserConverter {
         return User.builder()
                 .email(dto.getEmail())
                 .name(dto.getName())
+                .password(dto.getPassword())
                 .role(dto.getRole())
                 .build();
     }

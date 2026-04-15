@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -33,19 +34,21 @@ public class BookingController {
 
     @GetMapping
     @Operation(summary = "Get all bookings")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public List<BookingDto> getAll(@PageableDefault(size = 20) Pageable pageable) {
         return bookingService.findAll(pageable);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get booking by ID")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or @bookingService.isOwner(#id, authentication.principal.id)")
     public BookingDto getById(@PathVariable Long id) {
         return bookingService.findById(id);
     }
 
-    // TODO: requires auth (#3) — IDOR: any caller can read any user's bookings
     @GetMapping("/user/{userId}")
     @Operation(summary = "Get bookings by user ID")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or #userId == authentication.principal.id")
     public List<BookingDto> getByUserId(@PathVariable Long userId) {
         return bookingService.findByUserId(userId);
     }
@@ -53,19 +56,21 @@ public class BookingController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new booking")
+    @PreAuthorize("hasRole('ADMINISTRATOR') or #dto.userId == authentication.principal.id")
     public BookingDto create(@Valid @RequestBody BookingDto dto) {
         return bookingService.create(dto);
     }
 
-    // TODO: requires auth (#3) — no role check; customers can approve own bookings
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update booking status (APPROVED / REJECTED)")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public BookingDto updateStatus(@PathVariable Long id, @RequestParam BookingStatus status) {
         return bookingService.updateStatus(id, status);
     }
 
     @PatchMapping("/{id}/cancel")
     @Operation(summary = "Cancel a booking")
+    @PreAuthorize("hasRole('ADMINISTRATOR') or @bookingService.isOwner(#id, authentication.principal.id)")
     public BookingDto cancel(@PathVariable Long id) {
         return bookingService.cancel(id);
     }
@@ -73,6 +78,7 @@ public class BookingController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a booking")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public void delete(@PathVariable Long id) {
         bookingService.delete(id);
     }

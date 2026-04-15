@@ -1,8 +1,8 @@
 -- Users
-INSERT INTO users (email, name, role) VALUES ('john.doe@example.com', 'John Doe', 'CUSTOMER');
-INSERT INTO users (email, name, role) VALUES ('jane.smith@example.com', 'Jane Smith', 'CUSTOMER');
-INSERT INTO users (email, name, role) VALUES ('admin@bookshop.com', 'Admin User', 'ADMINISTRATOR');
-INSERT INTO users (email, name, role) VALUES ('manager@bookshop.com', 'Store Manager', 'MANAGER');
+INSERT INTO users (email, name, role, password) VALUES ('john.doe@example.com', 'John Doe', 'CUSTOMER', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+INSERT INTO users (email, name, role, password) VALUES ('jane.smith@example.com', 'Jane Smith', 'CUSTOMER', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+INSERT INTO users (email, name, role, password) VALUES ('admin@bookshop.com', 'Admin User', 'ADMINISTRATOR', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
+INSERT INTO users (email, name, role, password) VALUES ('manager@bookshop.com', 'Store Manager', 'MANAGER', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy');
 
 -- Products
 INSERT INTO products (title, author, price, description)

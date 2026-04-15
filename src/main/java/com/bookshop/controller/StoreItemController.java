@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 @RestController
@@ -42,12 +43,14 @@ public class StoreItemController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new store item")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public StoreItemDto create(@Valid @RequestBody StoreItemDto dto) {
         return storeItemService.create(dto);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update a store item")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public StoreItemDto update(@PathVariable Long id, @Valid @RequestBody StoreItemDto dto) {
         return storeItemService.update(id, dto);
     }
@@ -55,6 +58,7 @@ public class StoreItemController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a store item")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public void delete(@PathVariable Long id) {
         storeItemService.delete(id);
     }

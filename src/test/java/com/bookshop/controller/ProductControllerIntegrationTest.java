@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,7 @@ class ProductControllerIntegrationTest {
     JsonUtils jsonUtils;
 
     @Test
+    @WithMockUser(roles = "CUSTOMER")
     void getAll_returnsOkWithList() throws Exception {
         mockMvc.perform(get(ApiRoutes.PRODUCTS))
                 .andExpect(status().isOk())
@@ -40,6 +42,7 @@ class ProductControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     void create_validProduct_returnsCreated() throws Exception {
         ProductDto dto = ProductDto.builder()
                 .title("Test Book")
@@ -56,6 +59,7 @@ class ProductControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     void create_missingTitle_returnsBadRequest() throws Exception {
         ProductDto dto = ProductDto.builder()
                 .author("Author")
@@ -69,6 +73,7 @@ class ProductControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     void getById_existingId_returnsOk() throws Exception {
         ProductDto dto = ProductDto.builder()
                 .title("Get Book")
@@ -90,12 +95,14 @@ class ProductControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "CUSTOMER")
     void getById_nonExistingId_returnsNotFound() throws Exception {
         mockMvc.perform(get(ApiRoutes.PRODUCTS + "/99999"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
     void update_existingProduct_returnsOk() throws Exception {
         ProductDto dto = ProductDto.builder()
                 .title("Original")
@@ -124,6 +131,7 @@ class ProductControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
     void delete_existingProduct_returnsNoContent() throws Exception {
         ProductDto dto = ProductDto.builder()
                 .title("To Delete")

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 @RestController
@@ -29,25 +30,21 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "Get all users")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public List<UserDto> getAll() {
         return userService.findAll();
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or #id == authentication.principal.id")
     public UserDto getById(@PathVariable Long id) {
         return userService.findById(id);
     }
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create a new user")
-    public UserDto create(@Valid @RequestBody UserDto dto) {
-        return userService.create(dto);
-    }
-
     @PutMapping("/{id}")
     @Operation(summary = "Update a user")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public UserDto update(@PathVariable Long id, @Valid @RequestBody UserDto dto) {
         return userService.update(id, dto);
     }
@@ -55,6 +52,7 @@ public class UserController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a user")
+    @PreAuthorize("hasRole('ADMINISTRATOR')")
     public void delete(@PathVariable Long id) {
         userService.delete(id);
     }
