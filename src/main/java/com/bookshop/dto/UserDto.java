@@ -1,6 +1,7 @@
 package com.bookshop.dto;
 
 import com.bookshop.model.enums.Role;
+import com.bookshop.validation.ValidPassword;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,7 +35,8 @@ public class UserDto implements Serializable {
 
     @JsonIgnore
     @NotBlank
-    @Schema(description = "User password", example = "password", requiredMode = Schema.RequiredMode.REQUIRED)
+    @ValidPassword
+    @Schema(description = "User password", example = "Password123", requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
 
     @Schema(description = "User role", example = "CUSTOMER")
