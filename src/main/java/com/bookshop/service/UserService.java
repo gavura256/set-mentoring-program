@@ -4,8 +4,10 @@ import com.bookshop.converter.UserConverter;
 import com.bookshop.dto.UserDto;
 import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
+import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.model.User;
 import com.bookshop.model.enums.Role;
+import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,6 +25,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private BookingRepository bookingRepository;
 
     @Autowired
     private UserConverter userConverter;
@@ -100,6 +105,11 @@ public class UserService {
     public void delete(Long id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("User not found with id: " + id);
+        }
+        // Check if user has any bookings
+        var bookings = bookingRepository.findByUserIdWithFetch(id);
+        if (!bookings.isEmpty()) {
+            throw new InvalidOperationException("Cannot delete user with existing bookings. Please delete all bookings for this user first.");
         }
         userRepository.deleteById(id);
     }
