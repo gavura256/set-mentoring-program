@@ -69,7 +69,7 @@ public class UserService {
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         } else {
-            user.setPassword(passwordEncoder.encode("password"));
+            throw new InvalidOperationException("Password is required for user registration");
         }
         User saved = userRepository.save(user);
         return userConverter.entityToDto(saved);

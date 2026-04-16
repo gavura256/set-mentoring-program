@@ -34,7 +34,8 @@ public class UserDto implements Serializable {
     private String name;
 
     @JsonIgnore
-    @Schema(description = "User password", example = "password", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
+    @NotBlank
+    @Schema(description = "User password", example = "password", requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
 
     @Schema(description = "User role", example = "CUSTOMER")
