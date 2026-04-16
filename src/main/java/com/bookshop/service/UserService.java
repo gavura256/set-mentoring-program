@@ -2,13 +2,14 @@ package com.bookshop.service;
 
 import com.bookshop.converter.UserConverter;
 import com.bookshop.dto.UserDto;
+import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
-import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.model.User;
 import com.bookshop.model.enums.Role;
 import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.UserRepository;
+import com.bookshop.util.SanitizerUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -56,6 +57,7 @@ public class UserService {
         }
 
         User user = userConverter.dtoToEntity(dto);
+        user.setName(SanitizerUtils.sanitize(user.getName()));
 
         // Only ADMINISTRATOR can specify a role during creation
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -98,6 +100,7 @@ public class UserService {
             }
         }
 
+        dto.setName(SanitizerUtils.sanitize(dto.getName()));
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
 
