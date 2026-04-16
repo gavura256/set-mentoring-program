@@ -92,6 +92,12 @@ public class UserService {
             user.setRole(dto.getRole());
         }
 
+        if (!user.getEmail().equals(dto.getEmail())) {
+            if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+                throw new ResourceAlreadyExistsException("An account with this email already exists");
+            }
+        }
+
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
 
