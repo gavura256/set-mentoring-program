@@ -155,7 +155,7 @@ class UserServiceTest {
     void update_nonExistingId_throwsNotFoundException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.update(99L, userDto))
+        assertThatThrownBy(() -> userService.update(99L, UserDto.builder().email("test@example.com").name("Test").build()))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
     }
