@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,7 +37,7 @@ public class SecurityConfig {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
+            .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(ApiRoutes.AUTH + "/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -46,12 +47,12 @@ public class SecurityConfig {
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(rateLimitFilter, JwtAuthFilter.class)
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((request, response, authException) -> {
+                .authenticationEntryPoint((_, response, _) -> {
                     response.setContentType("application/json");
                     response.setStatus(401);
                     response.getWriter().write("{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Authentication required\"}");
                 })
-                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                .accessDeniedHandler((_, response, _) -> {
                     response.setContentType("application/json");
                     response.setStatus(403);
                     response.getWriter().write("{\"status\": 403, \"error\": \"Forbidden\", \"message\": \"Access denied\"}");
@@ -63,10 +64,11 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder);
-        return authProvider;
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        provider.setHideUserNotFoundExceptions(false);
+        return provider;
     }
 
     @Bean
