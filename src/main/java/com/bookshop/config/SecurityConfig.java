@@ -35,34 +35,38 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(ApiRoutes.AUTH + "/**").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(rateLimitFilter, JwtAuthFilter.class)
-            .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((_, response, _) -> {
-                    response.setContentType("application/json");
-                    response.setStatus(401);
-                    response.getWriter().write("{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Authentication required\"}");
-                })
-                .accessDeniedHandler((_, response, _) -> {
-                    response.setContentType("application/json");
-                    response.setStatus(403);
-                    response.getWriter().write("{\"status\": 403, \"error\": \"Forbidden\", \"message\": \"Access denied\"}");
-                })
-            );
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(ApiRoutes.AUTH + "/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitFilter, JwtAuthFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((_, response, _) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(401);
+                            response.getWriter().write("{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Authentication required\"}");
+                        })
+                        .accessDeniedHandler((_, response, _) -> {
+                            response.setContentType("application/json");
+                            response.setStatus(403);
+                            response.getWriter().write("{\"status\": 403, \"error\": \"Forbidden\", \"message\": \"Access denied\"}");
+                        })
+                );
 
         return http.build();
     }
 
     @Bean
+    // DaoAuthenticationProvider constructors and setters are deprecated in Spring Security 6.x
+    // but no direct replacement is available yet. Suppressing warnings as recommended by Spring team
+    // for backward compatibility. This may need refactoring in future Spring Security versions.
+    @SuppressWarnings("deprecation")
     public AuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsService);
