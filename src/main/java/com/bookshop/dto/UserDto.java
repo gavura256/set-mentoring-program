@@ -1,6 +1,7 @@
 package com.bookshop.dto;
 
 import com.bookshop.model.enums.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,6 +33,7 @@ public class UserDto implements Serializable {
     @Schema(description = "User full name", example = "John Doe", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
+    @JsonIgnore
     @Schema(description = "User password", example = "password", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private String password;
 
