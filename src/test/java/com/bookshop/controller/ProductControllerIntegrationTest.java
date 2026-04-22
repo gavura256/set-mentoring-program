@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -128,7 +128,7 @@ class ProductControllerIntegrationTest {
                 .quantity(20)
                 .build();
 
-        mockMvc.perform(put(ApiRoutes.PRODUCTS + "/{id}", id)
+        mockMvc.perform(patch(ApiRoutes.PRODUCTS + "/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(updatedDto)))
                 .andExpect(status().isOk())

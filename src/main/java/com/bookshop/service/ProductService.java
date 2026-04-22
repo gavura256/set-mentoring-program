@@ -55,14 +55,13 @@ public class ProductService {
     @Transactional
     public ProductDto update(Long id, ProductDto dto) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id))
-                .toBuilder()
-                .title(dto.getTitle())
-                .author(dto.getAuthor())
-                .price(dto.getPrice())
-                .description(dto.getDescription())
-                .quantity(dto.getQuantity())
-                .build();
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+
+        if (dto.getTitle() != null) product.setTitle(dto.getTitle());
+        if (dto.getAuthor() != null) product.setAuthor(dto.getAuthor());
+        if (dto.getPrice() != null) product.setPrice(dto.getPrice());
+        if (dto.getDescription() != null) product.setDescription(dto.getDescription());
+        if (dto.getQuantity() != null) product.setQuantity(dto.getQuantity());
 
         return productMapper.toDto(productRepository.save(product));
     }

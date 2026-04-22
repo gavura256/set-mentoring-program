@@ -13,14 +13,16 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.bookshop.dto.validation.OnCreate;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import java.util.List;
 
 @RestController
@@ -47,11 +49,11 @@ public class ProductController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new product")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
-    public ProductDto create(@Valid @RequestBody ProductDto dto) {
+    public ProductDto create(@Validated(OnCreate.class) @RequestBody ProductDto dto) {
         return productService.create(dto);
     }
 
-    @PutMapping(ApiRoutes.BY_ID)
+    @PatchMapping(ApiRoutes.BY_ID)
     @Operation(summary = "Update a product")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public ProductDto update(@PathVariable Long id, @Valid @RequestBody ProductDto dto) {
