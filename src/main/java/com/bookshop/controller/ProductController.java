@@ -4,6 +4,7 @@ import com.bookshop.dto.ProductDto;
 import com.bookshop.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -32,7 +33,7 @@ public class ProductController {
 
     @GetMapping
     @Operation(summary = "Get all products")
-    public List<ProductDto> getAll(@PageableDefault(size = 20) Pageable pageable) {
+    public List<ProductDto> getAll(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return productService.findAll(pageable);
     }
 
