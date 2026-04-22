@@ -14,6 +14,7 @@ public class ProductConverter {
                 .author(product.getAuthor())
                 .price(product.getPrice())
                 .description(product.getDescription())
+                .quantity(product.getQuantity())
                 .build();
     }
 
@@ -23,6 +24,7 @@ public class ProductConverter {
                 .author(dto.getAuthor())
                 .price(dto.getPrice())
                 .description(dto.getDescription())
+                .quantity(dto.getQuantity())
                 .build();
     }
 }

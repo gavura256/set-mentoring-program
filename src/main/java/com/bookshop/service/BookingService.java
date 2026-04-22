@@ -10,7 +10,6 @@ import com.bookshop.model.User;
 import com.bookshop.model.enums.BookingStatus;
 import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.ProductRepository;
-import com.bookshop.repository.StoreItemRepository;
 import com.bookshop.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -31,9 +30,6 @@ public class BookingService {
 
     @Autowired
     private ProductRepository productRepository;
-
-    @Autowired
-    private StoreItemRepository storeItemRepository;
 
     @Autowired
     private BookingConverter bookingConverter;
@@ -68,9 +64,7 @@ public class BookingService {
         Product product = productRepository.findById(dto.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + dto.getProductId()));
 
-        var storeItem = storeItemRepository.findByProductId(dto.getProductId())
-                .orElseThrow(() -> new InvalidOperationException("Product not available in store"));
-        if (storeItem.getQuantity() < dto.getQuantity()) {
+        if (product.getQuantity() < dto.getQuantity()) {
             throw new InvalidOperationException("Insufficient stock for product: " + product.getTitle());
         }
 
@@ -88,13 +82,12 @@ public class BookingService {
         }
 
         if (status == BookingStatus.APPROVED) {
-            var storeItem = storeItemRepository.findByProductId(booking.getProduct().getId())
-                    .orElseThrow(() -> new InvalidOperationException("Product not available in store"));
-            if (storeItem.getQuantity() < booking.getQuantity()) {
+            Product product = booking.getProduct();
+            if (product.getQuantity() < booking.getQuantity()) {
                 throw new InvalidOperationException("Insufficient stock to approve booking");
             }
-            storeItem.setQuantity(storeItem.getQuantity() - booking.getQuantity());
-            storeItemRepository.save(storeItem);
+            product.setQuantity(product.getQuantity() - booking.getQuantity());
+            productRepository.save(product);
         }
 
         booking.setStatus(status);

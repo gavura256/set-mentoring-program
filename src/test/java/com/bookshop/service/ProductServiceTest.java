@@ -50,6 +50,7 @@ class ProductServiceTest {
                 .title("Clean Code")
                 .author("Robert C. Martin")
                 .price(new BigDecimal("29.99"))
+                .quantity(50)
                 .build();
 
         productDto = ProductDto.builder()
@@ -57,6 +58,7 @@ class ProductServiceTest {
                 .title("Clean Code")
                 .author("Robert C. Martin")
                 .price(new BigDecimal("29.99"))
+                .quantity(50)
                 .build();
     }
 
@@ -119,6 +121,7 @@ class ProductServiceTest {
                 .title("Updated Title")
                 .author("Updated Author")
                 .price(new BigDecimal("19.99"))
+                .quantity(25)
                 .build();
 
         ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
@@ -134,6 +137,7 @@ class ProductServiceTest {
         assertThat(captor.getValue().getTitle()).isEqualTo("Updated Title");
         assertThat(captor.getValue().getAuthor()).isEqualTo("Updated Author");
         assertThat(captor.getValue().getPrice()).isEqualByComparingTo("19.99");
+        assertThat(captor.getValue().getQuantity()).isEqualTo(25);
         assertThat(result).isNotNull();
     }
 

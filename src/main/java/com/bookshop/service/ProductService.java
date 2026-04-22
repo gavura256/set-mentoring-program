@@ -51,6 +51,7 @@ public class ProductService {
                 .author(dto.getAuthor())
                 .price(dto.getPrice())
                 .description(dto.getDescription())
+                .quantity(dto.getQuantity())
                 .build();
 
         return productConverter.entityToDto(productRepository.save(product));
