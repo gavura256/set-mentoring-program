@@ -39,15 +39,9 @@ class BookingControllerIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        UserDto user = UserDto.builder()
-                .email("booking_user@example.com")
-                .name("Booking User")
-                .password("password")
-                .role(Role.CUSTOMER)
-                .build();
         String userResp = mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(user)))
+                        .content("{\"email\":\"booking_user@example.com\",\"name\":\"Booking User\",\"password\":\"Password1\",\"role\":\"CUSTOMER\"}"))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         userId = jsonUtils.fromJson(userResp, UserDto.class).getId();

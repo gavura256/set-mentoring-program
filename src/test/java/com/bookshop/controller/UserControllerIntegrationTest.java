@@ -1,7 +1,6 @@
 package com.bookshop.controller;
 
 import com.bookshop.dto.UserDto;
-import com.bookshop.model.enums.Role;
 import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,15 +30,6 @@ class UserControllerIntegrationTest {
     @Autowired
     private JsonUtils jsonUtils;
 
-    private UserDto buildUserDto(String email) {
-        return UserDto.builder()
-                .email(email)
-                .name("Test User")
-                .password("password")
-                .role(Role.CUSTOMER)
-                .build();
-    }
-
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void getAll_returnsOkWithList() throws Exception {
@@ -60,7 +50,7 @@ class UserControllerIntegrationTest {
     void delete_existingUser_returnsNoContent() throws Exception {
         String response = mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(buildUserDto("del@example.com"))))
+                        .content("{\"email\":\"del@example.com\",\"name\":\"Test User\",\"password\":\"Password1\",\"role\":\"CUSTOMER\"}"))
                 .andReturn().getResponse().getContentAsString();
 
         Long id = jsonUtils.fromJson(response, UserDto.class).getId();
