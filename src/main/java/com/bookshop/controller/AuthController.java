@@ -31,7 +31,7 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final UserService userService;
 
-    @PostMapping("/login")
+    @PostMapping(ApiRoutes.LOGIN)
     @Operation(summary = "Login to the application")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
@@ -48,7 +48,7 @@ public class AuthController {
                 .build());
     }
 
-    @PostMapping("/register")
+    @PostMapping(ApiRoutes.REGISTER)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Register a new user")
     public UserDto register(@Valid @RequestBody UserDto dto) {
