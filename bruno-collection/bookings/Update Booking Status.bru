@@ -5,16 +5,18 @@ meta {
 }
 
 patch {
-  url: {{baseUrl}}/api/bookings/1/status
-  body: none
+  url: {{baseUrl}}/api/bookings/1
+  body: json
   auth: none
-}
-
-params:query {
-  status: APPROVED
 }
 
 headers {
   Accept: application/json
   Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "status": "APPROVED"
+  }
 }

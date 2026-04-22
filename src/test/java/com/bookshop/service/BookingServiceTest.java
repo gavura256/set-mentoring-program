@@ -2,7 +2,6 @@ package com.bookshop.service;
 
 import com.bookshop.converter.BookingConverter;
 import com.bookshop.dto.BookingDto;
-import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.Booking;
 import com.bookshop.model.Product;
@@ -24,7 +23,6 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -101,7 +99,7 @@ class BookingServiceTest {
         List<BookingDto> result = bookingService.findAll(Pageable.unpaged());
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getStatus()).isEqualTo(BookingStatus.PENDING);
+        assertThat(result.getFirst().getStatus()).isEqualTo(BookingStatus.PENDING);
     }
 
     @Test
