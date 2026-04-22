@@ -1,6 +1,6 @@
 package com.bookshop.service;
 
-import com.bookshop.converter.ProductConverter;
+import com.bookshop.mapper.ProductMapper;
 import com.bookshop.dto.ProductDto;
 import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.Product;
@@ -37,7 +37,7 @@ class ProductServiceTest {
     private BookingRepository bookingRepository;
 
     @Mock
-    private ProductConverter productConverter;
+    private ProductMapper productMapper;
 
     @InjectMocks
     private ProductService productService;
@@ -68,7 +68,7 @@ class ProductServiceTest {
     void findAll_returnsAllProducts() {
         Page<Product> page = new PageImpl<>(List.of(product));
         when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
-        when(productConverter.entityToDto(product)).thenReturn(productDto);
+        when(productMapper.toDto(product)).thenReturn(productDto);
 
         List<ProductDto> result = productService.findAll(Pageable.unpaged());
 
@@ -88,7 +88,7 @@ class ProductServiceTest {
     @Test
     void findById_existingId_returnsDto() {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(productConverter.entityToDto(product)).thenReturn(productDto);
+        when(productMapper.toDto(product)).thenReturn(productDto);
 
         ProductDto result = productService.findById(1L);
 
@@ -107,9 +107,9 @@ class ProductServiceTest {
 
     @Test
     void create_validDto_returnsCreatedDto() {
-        when(productConverter.dtoToEntity(productDto)).thenReturn(product);
+        when(productMapper.toEntity(productDto)).thenReturn(product);
         when(productRepository.save(product)).thenReturn(product);
-        when(productConverter.entityToDto(product)).thenReturn(productDto);
+        when(productMapper.toDto(product)).thenReturn(productDto);
 
         ProductDto result = productService.create(productDto);
 
@@ -130,7 +130,7 @@ class ProductServiceTest {
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(productRepository.save(any(Product.class))).thenReturn(product);
-        when(productConverter.entityToDto(product)).thenReturn(productDto);
+        when(productMapper.toDto(product)).thenReturn(productDto);
 
         ProductDto result = productService.update(1L, updateDto);
 

@@ -1,6 +1,6 @@
 package com.bookshop.service;
 
-import com.bookshop.converter.UserConverter;
+import com.bookshop.mapper.UserMapper;
 import com.bookshop.dto.UserDto;
 import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
@@ -39,7 +39,7 @@ class UserServiceTest {
     private BookingRepository bookingRepository;
 
     @Mock
-    private UserConverter userConverter;
+    private UserMapper userMapper;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -71,7 +71,7 @@ class UserServiceTest {
     @Test
     void findAll_returnsAllUsers() {
         when(userRepository.findAll()).thenReturn(List.of(user));
-        when(userConverter.entityToDto(user)).thenReturn(userDto);
+        when(userMapper.toDto(user)).thenReturn(userDto);
 
         List<UserDto> result = userService.findAll();
 
@@ -91,7 +91,7 @@ class UserServiceTest {
     @Test
     void findById_existingId_returnsDto() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userConverter.entityToDto(user)).thenReturn(userDto);
+        when(userMapper.toDto(user)).thenReturn(userDto);
 
         UserDto result = userService.findById(1L);
 
@@ -112,10 +112,10 @@ class UserServiceTest {
     @WithMockUser(roles = "ADMINISTRATOR")
     void create_newEmail_returnsCreatedDto() {
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.empty());
-        when(userConverter.dtoToEntity(userDto)).thenReturn(user);
+        when(userMapper.toEntity(userDto)).thenReturn(user);
         when(passwordEncoder.encode("password")).thenReturn("encoded");
         when(userRepository.save(user)).thenReturn(user);
-        when(userConverter.entityToDto(user)).thenReturn(userDto);
+        when(userMapper.toDto(user)).thenReturn(userDto);
 
         UserDto result = userService.create(userDto);
 
@@ -145,7 +145,7 @@ class UserServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
-        when(userConverter.entityToDto(user)).thenReturn(userDto);
+        when(userMapper.toDto(user)).thenReturn(userDto);
 
         UserDto result = userService.update(1L, updateDto);
 

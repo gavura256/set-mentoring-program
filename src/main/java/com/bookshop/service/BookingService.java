@@ -1,6 +1,6 @@
 package com.bookshop.service;
 
-import com.bookshop.converter.BookingConverter;
+import com.bookshop.mapper.BookingMapper;
 import com.bookshop.dto.BookingDto;
 import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.exception.ResourceNotFoundException;
@@ -32,19 +32,19 @@ public class BookingService {
     private ProductRepository productRepository;
 
     @Autowired
-    private BookingConverter bookingConverter;
+    private BookingMapper bookingMapper;
 
     @Transactional(readOnly = true)
     public List<BookingDto> findAll(Pageable pageable) {
         return bookingRepository.findAllWithFetch(pageable).getContent().stream()
-                .map(bookingConverter::entityToDto)
+                .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public BookingDto findById(Long id) {
         return bookingRepository.findById(id)
-                .map(bookingConverter::entityToDto)
+                .map(bookingMapper::toDto)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
     }
 
@@ -53,7 +53,7 @@ public class BookingService {
         userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         return bookingRepository.findByUserIdWithFetch(userId).stream()
-                .map(bookingConverter::entityToDto)
+                .map(bookingMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -68,9 +68,9 @@ public class BookingService {
             throw new InvalidOperationException("Insufficient stock for product: " + product.getTitle());
         }
 
-        Booking booking = bookingConverter.dtoToEntity(dto, user, product);
+        Booking booking = bookingMapper.toEntity(dto, user, product);
         booking.setStatus(BookingStatus.PENDING);
-        return bookingConverter.entityToDto(bookingRepository.save(booking));
+        return bookingMapper.toDto(bookingRepository.save(booking));
     }
 
     @Transactional
@@ -88,7 +88,7 @@ public class BookingService {
         }
 
         booking.setStatus(status);
-        return bookingConverter.entityToDto(bookingRepository.save(booking));
+        return bookingMapper.toDto(bookingRepository.save(booking));
     }
 
     @Transactional
