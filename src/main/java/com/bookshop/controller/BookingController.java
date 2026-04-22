@@ -1,7 +1,7 @@
 package com.bookshop.controller;
 
 import com.bookshop.dto.BookingDto;
-import com.bookshop.model.enums.BookingStatus;
+import com.bookshop.dto.UpdateStatusRequest;
 import com.bookshop.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -62,11 +62,11 @@ public class BookingController {
         return bookingService.create(dto);
     }
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping("/{id}")
     @Operation(summary = "Update booking status (APPROVED / REJECTED)")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
-    public BookingDto updateStatus(@PathVariable Long id, @RequestParam BookingStatus status) {
-        return bookingService.updateStatus(id, status);
+    public BookingDto updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateStatusRequest request) {
+        return bookingService.updateStatus(id, request.getStatus());
     }
 
     @DeleteMapping("/{id}")

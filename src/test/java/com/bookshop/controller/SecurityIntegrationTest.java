@@ -55,8 +55,9 @@ class SecurityIntegrationTest {
     @Test
     @WithMockUser(roles = "CUSTOMER")
     void updateBookingStatus_customerRole_returns403() throws Exception {
-        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/1/status")
-                        .param("status", "APPROVED"))
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
                 .andExpect(status().isForbidden());
     }
 

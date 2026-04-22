@@ -126,8 +126,9 @@ class BookingControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
-        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}/status", id)
-                        .param("status", "APPROVED"))
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APPROVED"));
     }
@@ -158,8 +159,9 @@ class BookingControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
-        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}/status", id)
-                        .param("status", "CANCELLED")
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"CANCELLED\"}")
                         .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
                                 com.bookshop.model.User.builder().id(99L).email("manager@example.com").password("password").role(Role.MANAGER).build()
                         ))))
@@ -179,8 +181,9 @@ class BookingControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
-        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}/status", id)
-                        .param("status", "CANCELLED"))
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"CANCELLED\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
     }

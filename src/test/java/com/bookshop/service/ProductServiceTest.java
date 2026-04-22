@@ -13,13 +13,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -75,7 +73,7 @@ class ProductServiceTest {
         List<ProductDto> result = productService.findAll(Pageable.unpaged());
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getTitle()).isEqualTo("Clean Code");
+        assertThat(result.getFirst().getTitle()).isEqualTo("Clean Code");
     }
 
     @Test

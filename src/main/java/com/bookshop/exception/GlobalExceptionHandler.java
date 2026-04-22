@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException ex) {
+    public ResponseEntity<ErrorResponse> handleNotReadable() {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(errorResponse(HttpStatus.BAD_REQUEST, "Malformed JSON request body"));
     }
