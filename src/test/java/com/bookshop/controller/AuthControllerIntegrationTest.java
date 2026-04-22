@@ -1,7 +1,6 @@
 package com.bookshop.controller;
 
 import com.bookshop.dto.auth.LoginRequest;
-import com.bookshop.dto.UserDto;
 import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,22 +29,15 @@ class AuthControllerIntegrationTest {
 
     @Test
     void login_validCredentials_returnsTokenAndUserDetails() throws Exception {
-        // Create a user
-        UserDto user = UserDto.builder()
-                .email("test_auth@example.com")
-                .name("Auth User")
-                .password("password123")
-                .build();
-        
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(user)))
+                        .content("{\"email\":\"test_auth@example.com\",\"name\":\"Auth User\",\"password\":\"Password1\"}"))
                 .andExpect(status().isCreated());
 
         // Attempt login
         LoginRequest loginRequest = LoginRequest.builder()
                 .email("test_auth@example.com")
-                .password("password123")
+                .password("Password1")
                 .build();
         
         mockMvc.perform(post(ApiRoutes.AUTH + "/login")
@@ -59,15 +51,9 @@ class AuthControllerIntegrationTest {
 
     @Test
     void register_validUser_returnsCreated() throws Exception {
-        UserDto user = UserDto.builder()
-                .email("new_reg@example.com")
-                .name("New User")
-                .password("password123")
-                .build();
-
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(user)))
+                        .content("{\"email\":\"new_reg@example.com\",\"name\":\"New User\",\"password\":\"Password1\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("new_reg@example.com"))
                 .andExpect(jsonPath("$.role").value("CUSTOMER"));
@@ -75,20 +61,14 @@ class AuthControllerIntegrationTest {
 
     @Test
     void register_duplicateEmail_returnsConflict() throws Exception {
-        UserDto user = UserDto.builder()
-                .email("dup_reg@example.com")
-                .name("Dup User")
-                .password("password123")
-                .build();
-
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonUtils.toJson(user)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"dup_reg@example.com\",\"name\":\"Dup User\",\"password\":\"Password1\"}"))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(user)))
+                        .content("{\"email\":\"dup_reg@example.com\",\"name\":\"Dup User\",\"password\":\"Password1\"}"))
                 .andExpect(status().isConflict());
     }
 

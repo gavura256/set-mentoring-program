@@ -6,6 +6,7 @@ import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.User;
 import com.bookshop.model.enums.Role;
+import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,9 @@ class UserServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private BookingRepository bookingRepository;
+
+    @Mock
     private UserConverter userConverter;
 
     @Mock
@@ -59,6 +63,7 @@ class UserServiceTest {
                 .id(1L)
                 .email("john@example.com")
                 .name("John Doe")
+                .password("password")
                 .role(Role.CUSTOMER)
                 .build();
     }
@@ -163,6 +168,7 @@ class UserServiceTest {
     @Test
     void delete_existingId_deletesUser() {
         when(userRepository.existsById(1L)).thenReturn(true);
+        when(bookingRepository.findByUserIdWithFetch(1L)).thenReturn(Collections.emptyList());
 
         userService.delete(1L);
 
