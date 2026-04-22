@@ -40,14 +40,14 @@ public class BookingController {
         return bookingService.findAll(pageable);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(ApiRoutes.BY_ID)
     @Operation(summary = "Get booking by ID")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or @bookingService.isOwner(#id, authentication.principal.id)")
     public BookingDto getById(@PathVariable Long id) {
         return bookingService.findById(id);
     }
 
-    @GetMapping("/user/{userId}")
+    @GetMapping(ApiRoutes.BY_USER_ID)
     @Operation(summary = "Get bookings by user ID")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or #userId == authentication.principal.id")
     public List<BookingDto> getByUserId(@PathVariable Long userId) {
@@ -62,14 +62,14 @@ public class BookingController {
         return bookingService.create(dto);
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping(ApiRoutes.BY_ID)
     @Operation(summary = "Update booking status (APPROVED / REJECTED)")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public BookingDto updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateStatusRequest request) {
         return bookingService.updateStatus(id, request.getStatus());
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping(ApiRoutes.BY_ID)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a booking")
     @PreAuthorize("hasRole('ADMINISTRATOR')")

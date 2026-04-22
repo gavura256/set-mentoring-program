@@ -35,21 +35,21 @@ public class UserController {
         return userService.findAll();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(ApiRoutes.BY_ID)
     @Operation(summary = "Get user by ID")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or #id == authentication.principal.id")
     public UserDto getById(@PathVariable Long id) {
         return userService.findById(id);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(ApiRoutes.BY_ID)
     @Operation(summary = "Update a user")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public UserDto update(@PathVariable Long id, @Valid @RequestBody UserDto dto) {
         return userService.update(id, dto);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping(ApiRoutes.BY_ID)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a user")
     @PreAuthorize("hasRole('ADMINISTRATOR')")

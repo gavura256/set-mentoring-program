@@ -11,7 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import com.bookshop.model.User;
+import com.bookshop.security.CustomUserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +57,7 @@ class BookingControllerIntegrationTest {
                 .quantity(50)
                 .build();
         String prodResp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin").roles("ADMINISTRATOR"))
+                        .with(user("admin").roles("ADMINISTRATOR"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(product)))
                 .andReturn().getResponse().getContentAsString();
@@ -81,8 +85,8 @@ class BookingControllerIntegrationTest {
     void create_validBooking_returnsCreatedWithPendingStatus() throws Exception {
         BookingDto dto = buildBookingDto();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
-                                com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
                         )))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
@@ -94,8 +98,8 @@ class BookingControllerIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     void getById_existingBooking_returnsOk() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
-                                com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
                         )))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
@@ -118,8 +122,8 @@ class BookingControllerIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     void updateStatus_pendingBooking_approvesSuccessfully() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
-                                com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
                         )))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
@@ -138,8 +142,8 @@ class BookingControllerIntegrationTest {
     void create_managerRole_returnsCreated() throws Exception {
         BookingDto dto = buildBookingDto();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
-                                com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.MANAGER).build()
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.MANAGER).build()
                         )))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
@@ -151,8 +155,8 @@ class BookingControllerIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     void cancel_managerRole_returnsCancelledStatus() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
-                                com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
                         )))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
@@ -162,8 +166,8 @@ class BookingControllerIntegrationTest {
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":\"CANCELLED\"}")
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
-                                com.bookshop.model.User.builder().id(99L).email("manager@example.com").password("password").role(Role.MANAGER).build()
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(99L).email("manager@example.com").password("password").role(Role.MANAGER).build()
                         ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
@@ -173,8 +177,8 @@ class BookingControllerIntegrationTest {
     @WithMockUser(roles = "ADMINISTRATOR")
     void cancel_pendingBooking_returnsCancelledStatus() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
-                                com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
                         )))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
@@ -192,8 +196,8 @@ class BookingControllerIntegrationTest {
     @WithMockUser(roles = "ADMINISTRATOR")
     void delete_existingBooking_returnsNoContent() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
-                                com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
                         )))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
@@ -208,8 +212,8 @@ class BookingControllerIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     void getByUserId_existingUser_returnsBookings() throws Exception {
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
-                        com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                .with(user(new CustomUserDetails(
+                        User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
                 )))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonUtils.toJson(buildBookingDto())));

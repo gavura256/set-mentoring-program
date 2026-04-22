@@ -37,7 +37,7 @@ public class ProductController {
         return productService.findAll(pageable);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(ApiRoutes.BY_ID)
     @Operation(summary = "Get product by ID")
     public ProductDto getById(@PathVariable Long id) {
         return productService.findById(id);
@@ -51,14 +51,14 @@ public class ProductController {
         return productService.create(dto);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(ApiRoutes.BY_ID)
     @Operation(summary = "Update a product")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public ProductDto update(@PathVariable Long id, @Valid @RequestBody ProductDto dto) {
         return productService.update(id, dto);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping(ApiRoutes.BY_ID)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Delete a product")
     @PreAuthorize("hasRole('ADMINISTRATOR')")
