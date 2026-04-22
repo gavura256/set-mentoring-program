@@ -1,6 +1,6 @@
 package com.bookshop.service;
 
-import com.bookshop.converter.BookingConverter;
+import com.bookshop.mapper.BookingMapper;
 import com.bookshop.dto.BookingDto;
 import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.Booking;
@@ -45,7 +45,7 @@ class BookingServiceTest {
     private ProductRepository productRepository;
 
     @Mock
-    private BookingConverter bookingConverter;
+    private BookingMapper bookingMapper;
 
     @InjectMocks
     private BookingService bookingService;
@@ -94,7 +94,7 @@ class BookingServiceTest {
     void findAll_returnsAllBookings() {
         Page<Booking> page = new PageImpl<>(List.of(booking));
         when(bookingRepository.findAllWithFetch(any(Pageable.class))).thenReturn(page);
-        when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
 
         List<BookingDto> result = bookingService.findAll(Pageable.unpaged());
 
@@ -114,7 +114,7 @@ class BookingServiceTest {
     @Test
     void findById_existingId_returnsDto() {
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
 
         BookingDto result = bookingService.findById(1L);
 
@@ -135,7 +135,7 @@ class BookingServiceTest {
     void findByUserId_existingUser_returnsBookings() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(bookingRepository.findByUserIdWithFetch(1L)).thenReturn(List.of(booking));
-        when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
 
         List<BookingDto> result = bookingService.findByUserId(1L);
 
@@ -155,9 +155,9 @@ class BookingServiceTest {
     void create_validDto_setsStatusPendingAndSaves() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(bookingConverter.dtoToEntity(bookingDto, user, product)).thenReturn(booking);
+        when(bookingMapper.toEntity(bookingDto, user, product)).thenReturn(booking);
         when(bookingRepository.save(booking)).thenReturn(booking);
-        when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
 
         BookingDto result = bookingService.create(bookingDto);
 
@@ -191,7 +191,7 @@ class BookingServiceTest {
     void updateStatus_pendingBooking_updatesStatus() {
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
         when(bookingRepository.save(booking)).thenReturn(booking);
-        when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
 
         bookingService.updateStatus(1L, BookingStatus.APPROVED);
 
@@ -212,7 +212,7 @@ class BookingServiceTest {
     void updateStatus_cancelPendingBooking_setsStatusCancelled() {
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
         when(bookingRepository.save(booking)).thenReturn(booking);
-        when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
 
         bookingService.updateStatus(1L, BookingStatus.CANCELLED);
 

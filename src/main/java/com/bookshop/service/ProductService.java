@@ -1,6 +1,6 @@
 package com.bookshop.service;
 
-import com.bookshop.converter.ProductConverter;
+import com.bookshop.mapper.ProductMapper;
 import com.bookshop.dto.ProductDto;
 import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.exception.ResourceAlreadyExistsException;
@@ -23,7 +23,7 @@ public class ProductService {
     private ProductRepository productRepository;
 
     @Autowired
-    private ProductConverter productConverter;
+    private ProductMapper productMapper;
 
     @Autowired
     private BookingRepository bookingRepository;
@@ -31,7 +31,7 @@ public class ProductService {
     @Transactional(readOnly = true)
     public List<ProductDto> findAll(Pageable pageable) {
         return productRepository.findAll(pageable).getContent().stream()
-                .map(productConverter::entityToDto)
+                .map(productMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -39,7 +39,7 @@ public class ProductService {
     public ProductDto findById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-        return productConverter.entityToDto(product);
+        return productMapper.toDto(product);
     }
 
     @Transactional
@@ -48,8 +48,8 @@ public class ProductService {
             throw new ResourceAlreadyExistsException(
                     "Product '" + dto.getTitle() + "' by '" + dto.getAuthor() + "' already exists");
         }
-        Product saved = productRepository.save(productConverter.dtoToEntity(dto));
-        return productConverter.entityToDto(saved);
+        Product saved = productRepository.save(productMapper.toEntity(dto));
+        return productMapper.toDto(saved);
     }
 
     @Transactional
@@ -64,7 +64,7 @@ public class ProductService {
                 .quantity(dto.getQuantity())
                 .build();
 
-        return productConverter.entityToDto(productRepository.save(product));
+        return productMapper.toDto(productRepository.save(product));
     }
 
     @Transactional

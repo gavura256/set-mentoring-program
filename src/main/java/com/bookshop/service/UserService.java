@@ -1,6 +1,6 @@
 package com.bookshop.service;
 
-import com.bookshop.converter.UserConverter;
+import com.bookshop.mapper.UserMapper;
 import com.bookshop.dto.UserDto;
 import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.exception.ResourceAlreadyExistsException;
@@ -31,7 +31,7 @@ public class UserService {
     private BookingRepository bookingRepository;
 
     @Autowired
-    private UserConverter userConverter;
+    private UserMapper userMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -39,7 +39,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public List<UserDto> findAll() {
         return userRepository.findAll().stream()
-                .map(userConverter::entityToDto)
+                .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -47,7 +47,7 @@ public class UserService {
     public UserDto findById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        return userConverter.entityToDto(user);
+        return userMapper.toDto(user);
     }
 
     @Transactional
@@ -56,7 +56,7 @@ public class UserService {
             throw new ResourceAlreadyExistsException("An account with this email already exists");
         }
 
-        User user = userConverter.dtoToEntity(dto);
+        User user = userMapper.toEntity(dto);
         user.setName(SanitizerUtils.sanitize(user.getName()));
 
         // Only ADMINISTRATOR can specify a role during creation
@@ -74,7 +74,7 @@ public class UserService {
             throw new InvalidOperationException("Password is required for user registration");
         }
         User saved = userRepository.save(user);
-        return userConverter.entityToDto(saved);
+        return userMapper.toDto(saved);
     }
 
     @Transactional
@@ -107,7 +107,7 @@ public class UserService {
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
-        return userConverter.entityToDto(userRepository.save(user));
+        return userMapper.toDto(userRepository.save(user));
     }
 
     @Transactional
