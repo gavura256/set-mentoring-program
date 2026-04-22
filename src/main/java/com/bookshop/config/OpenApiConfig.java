@@ -5,11 +5,28 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OpenApiConfig {
+
+    @Bean
+    public OpenApiCustomizer pageableExampleCustomizer() {
+        return openApi -> openApi.getPaths().values().forEach(pathItem ->
+                pathItem.readOperations().forEach(operation -> {
+                    if (operation.getParameters() == null) return;
+                    operation.getParameters().forEach(parameter -> {
+                        switch (parameter.getName()) {
+                            case "page" -> parameter.setExample(0);
+                            case "size" -> parameter.setExample(20);
+                            case "sort" -> parameter.setExample("id,asc");
+                        }
+                    });
+                })
+        );
+    }
 
     @Bean
     public OpenAPI bookshopOpenAPI() {

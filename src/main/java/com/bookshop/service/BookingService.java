@@ -77,9 +77,6 @@ public class BookingService {
     public BookingDto updateStatus(Long id, BookingStatus status) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found with id: " + id));
-        if (booking.getStatus() == BookingStatus.CANCELLED) {
-            throw new InvalidOperationException("Cannot update a cancelled booking");
-        }
 
         if (status == BookingStatus.APPROVED) {
             Product product = booking.getProduct();
@@ -92,11 +89,6 @@ public class BookingService {
 
         booking.setStatus(status);
         return bookingConverter.entityToDto(bookingRepository.save(booking));
-    }
-
-    @Transactional
-    public BookingDto cancel(Long id) {
-        return updateStatus(id, BookingStatus.CANCELLED);
     }
 
     @Transactional

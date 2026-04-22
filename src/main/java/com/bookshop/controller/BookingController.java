@@ -5,6 +5,7 @@ import com.bookshop.model.enums.BookingStatus;
 import com.bookshop.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -35,7 +36,7 @@ public class BookingController {
     @GetMapping
     @Operation(summary = "Get all bookings")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
-    public List<BookingDto> getAll(@PageableDefault(size = 20) Pageable pageable) {
+    public List<BookingDto> getAll(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return bookingService.findAll(pageable);
     }
 
@@ -66,13 +67,6 @@ public class BookingController {
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
     public BookingDto updateStatus(@PathVariable Long id, @RequestParam BookingStatus status) {
         return bookingService.updateStatus(id, status);
-    }
-
-    @PatchMapping("/{id}/cancel")
-    @Operation(summary = "Cancel a booking")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or @bookingService.isOwner(#id, authentication.principal.id)")
-    public BookingDto cancel(@PathVariable Long id) {
-        return bookingService.cancel(id);
     }
 
     @DeleteMapping("/{id}")
