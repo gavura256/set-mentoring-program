@@ -4,6 +4,7 @@ import com.bookshop.converter.ProductConverter;
 import com.bookshop.dto.ProductDto;
 import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.Product;
+import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,9 @@ class ProductServiceTest {
 
     @Mock
     private ProductRepository productRepository;
+
+    @Mock
+    private BookingRepository bookingRepository;
 
     @Mock
     private ProductConverter productConverter;
@@ -155,6 +159,7 @@ class ProductServiceTest {
     @Test
     void delete_existingId_deletesProduct() {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(bookingRepository.existsByProductId(1L)).thenReturn(false);
 
         productService.delete(1L);
 

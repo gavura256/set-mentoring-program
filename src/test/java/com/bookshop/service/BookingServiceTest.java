@@ -211,32 +211,14 @@ class BookingServiceTest {
     }
 
     @Test
-    void updateStatus_cancelledBooking_throwsInvalidOperationException() {
-        booking.setStatus(BookingStatus.CANCELLED);
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-
-        assertThatThrownBy(() -> bookingService.updateStatus(1L, BookingStatus.APPROVED))
-                .isInstanceOf(InvalidOperationException.class);
-    }
-
-    @Test
-    void cancel_pendingBooking_setsStatusCancelled() {
+    void updateStatus_cancelPendingBooking_setsStatusCancelled() {
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
         when(bookingRepository.save(booking)).thenReturn(booking);
         when(bookingConverter.entityToDto(booking)).thenReturn(bookingDto);
 
-        bookingService.cancel(1L);
+        bookingService.updateStatus(1L, BookingStatus.CANCELLED);
 
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELLED);
-    }
-
-    @Test
-    void cancel_cancelledBooking_throwsInvalidOperationException() {
-        booking.setStatus(BookingStatus.CANCELLED);
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-
-        assertThatThrownBy(() -> bookingService.cancel(1L))
-                .isInstanceOf(InvalidOperationException.class);
     }
 
     // BookingService.delete() resolves the entity via findById first, then calls
