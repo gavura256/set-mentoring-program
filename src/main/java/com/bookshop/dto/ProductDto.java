@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.bookshop.dto.validation.OnCreate;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -31,7 +32,7 @@ public class ProductDto implements Serializable {
     @Schema(description = "Book author", example = "Robert C. Martin", requiredMode = Schema.RequiredMode.REQUIRED)
     private String author;
 
-    @NotNull
+    @NotNull(groups = OnCreate.class)
     @Positive
     @Schema(description = "Price", example = "29.99", requiredMode = Schema.RequiredMode.REQUIRED)
     private BigDecimal price;
@@ -39,7 +40,7 @@ public class ProductDto implements Serializable {
     @Schema(description = "Book description", example = "A handbook of agile software craftsmanship")
     private String description;
 
-    @NotNull
+    @NotNull(groups = OnCreate.class)
     @Positive
     @Schema(description = "Stock quantity", example = "50", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer quantity;
