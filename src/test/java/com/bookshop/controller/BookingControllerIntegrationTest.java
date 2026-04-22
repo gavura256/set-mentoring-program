@@ -133,6 +133,40 @@ class BookingControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_managerRole_returnsCreated() throws Exception {
+        BookingDto dto = buildBookingDto();
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
+                                com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.MANAGER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PENDING"));
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void cancel_managerRole_returnsCancelledStatus() throws Exception {
+        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
+                                com.bookshop.model.User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(buildBookingDto())))
+                .andReturn().getResponse().getContentAsString();
+        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
+
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}/cancel", id)
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(new com.bookshop.security.CustomUserDetails(
+                                com.bookshop.model.User.builder().id(99L).email("manager@example.com").password("password").role(Role.MANAGER).build()
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELLED"));
+    }
+
+    @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void cancel_pendingBooking_returnsCancelledStatus() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)

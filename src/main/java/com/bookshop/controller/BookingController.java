@@ -56,7 +56,7 @@ public class BookingController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new booking")
-    @PreAuthorize("hasRole('ADMINISTRATOR') or #dto.userId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or #dto.userId == authentication.principal.id")
     public BookingDto create(@Valid @RequestBody BookingDto dto) {
         return bookingService.create(dto);
     }
@@ -70,7 +70,7 @@ public class BookingController {
 
     @PatchMapping("/{id}/cancel")
     @Operation(summary = "Cancel a booking")
-    @PreAuthorize("hasRole('ADMINISTRATOR') or @bookingService.isOwner(#id, authentication.principal.id)")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or @bookingService.isOwner(#id, authentication.principal.id)")
     public BookingDto cancel(@PathVariable Long id) {
         return bookingService.cancel(id);
     }
