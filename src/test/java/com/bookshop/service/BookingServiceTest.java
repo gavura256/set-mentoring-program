@@ -71,6 +71,7 @@ class BookingServiceTest {
                 .title("Clean Code")
                 .author("Robert C. Martin")
                 .price(new BigDecimal("29.99"))
+                .quantity(10)
                 .build();
 
         booking = Booking.builder()

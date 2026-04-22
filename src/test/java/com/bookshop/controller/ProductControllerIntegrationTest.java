@@ -48,6 +48,7 @@ class ProductControllerIntegrationTest {
                 .title("Test Book")
                 .author("Test Author")
                 .price(new BigDecimal("19.99"))
+                .quantity(10)
                 .build();
 
         mockMvc.perform(post(ApiRoutes.PRODUCTS)
@@ -55,7 +56,8 @@ class ProductControllerIntegrationTest {
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.title").value("Test Book"))
-                .andExpect(jsonPath("$.author").value("Test Author"));
+                .andExpect(jsonPath("$.author").value("Test Author"))
+                .andExpect(jsonPath("$.quantity").value(10));
     }
 
     @Test
@@ -79,6 +81,7 @@ class ProductControllerIntegrationTest {
                 .title("Get Book")
                 .author("Author")
                 .price(new BigDecimal("15.00"))
+                .quantity(10)
                 .build();
 
         String response = mockMvc.perform(post(ApiRoutes.PRODUCTS)
@@ -108,6 +111,7 @@ class ProductControllerIntegrationTest {
                 .title("Original")
                 .author("Author")
                 .price(new BigDecimal("10.00"))
+                .quantity(10)
                 .build();
 
         String response = mockMvc.perform(post(ApiRoutes.PRODUCTS)
@@ -121,6 +125,7 @@ class ProductControllerIntegrationTest {
                 .title("Updated")
                 .author("Author")
                 .price(new BigDecimal("10.00"))
+                .quantity(20)
                 .build();
 
         mockMvc.perform(put(ApiRoutes.PRODUCTS + "/{id}", id)
@@ -137,6 +142,7 @@ class ProductControllerIntegrationTest {
                 .title("To Delete")
                 .author("Author")
                 .price(new BigDecimal("5.00"))
+                .quantity(10)
                 .build();
 
         String response = mockMvc.perform(post(ApiRoutes.PRODUCTS)

@@ -38,4 +38,9 @@ public class ProductDto implements Serializable {
 
     @Schema(description = "Book description", example = "A handbook of agile software craftsmanship")
     private String description;
+
+    @NotNull
+    @Positive
+    @Schema(description = "Stock quantity", example = "50", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Integer quantity;
 }

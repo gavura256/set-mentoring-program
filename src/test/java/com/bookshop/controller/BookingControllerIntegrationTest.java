@@ -56,6 +56,7 @@ class BookingControllerIntegrationTest {
                 .title("Booking Book")
                 .author("Author")
                 .price(new BigDecimal("25.00"))
+                .quantity(50)
                 .build();
         String prodResp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin").roles("ADMINISTRATOR"))
