@@ -148,9 +148,3 @@ All errors follow a consistent response format:
 ## 🗂️ Bruno Collection
 
 A Bruno collection is available in `bruno-collection/` for API testing. Import it directly into [Bruno](https://usebruno.com) and configure the `local` environment.
-
-## ✅ TODOs
-- [ ] Set up CI/CD pipeline (e.g., GitHub Actions).
-
-## 📄 License
-TODO: Add license information.
