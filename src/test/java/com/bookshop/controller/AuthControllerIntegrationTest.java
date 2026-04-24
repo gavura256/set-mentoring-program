@@ -84,4 +84,48 @@ class AuthControllerIntegrationTest {
                         .content(jsonUtils.toJson(loginRequest)))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void register_invalidEmail_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(ApiRoutes.AUTH + "/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"not-an-email\",\"name\":\"Test\",\"password\":\"Password1\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_weakPassword_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(ApiRoutes.AUTH + "/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"weak@example.com\",\"name\":\"Test\",\"password\":\"weakpass\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_missingName_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(ApiRoutes.AUTH + "/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"noname@example.com\",\"password\":\"Password1\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void register_withAdminRole_forcedToCustomer() throws Exception {
+        // Registering with ADMINISTRATOR role must be silently downgraded to CUSTOMER
+        mockMvc.perform(post(ApiRoutes.AUTH + "/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"tryadmin@example.com\",\"name\":\"Hacker\",\"password\":\"Password1\",\"role\":\"ADMINISTRATOR\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.role").value("CUSTOMER"));
+    }
+
+    @Test
+    void register_passwordNotReturnedInResponse() throws Exception {
+        // password field is WRITE_ONLY — must not appear in the response
+        mockMvc.perform(post(ApiRoutes.AUTH + "/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"nopwd@example.com\",\"name\":\"Test\",\"password\":\"Password1\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.password").doesNotExist());
+    }
 }

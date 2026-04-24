@@ -2,6 +2,7 @@ package com.bookshop.service;
 
 import com.bookshop.mapper.BookingMapper;
 import com.bookshop.dto.BookingDto;
+import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.Booking;
 import com.bookshop.model.Product;
@@ -237,5 +238,63 @@ class BookingServiceTest {
         assertThatThrownBy(() -> bookingService.delete(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
+    }
+
+    @Test
+    void create_insufficientStock_throwsInvalidOperationException() {
+        product.setQuantity(1);
+        bookingDto.setQuantity(5);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        assertThatThrownBy(() -> bookingService.create(bookingDto))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Insufficient stock");
+    }
+
+    @Test
+    void updateStatus_approvedWithInsufficientStock_throwsInvalidOperationException() {
+        product.setQuantity(0);
+        booking.setQuantity(2);
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.updateStatus(1L, BookingStatus.APPROVED))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Insufficient stock");
+    }
+
+    @Test
+    void updateStatus_approvedBooking_decrementsProductQuantity() {
+        product.setQuantity(10);
+        booking.setQuantity(3);
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+        when(bookingRepository.save(booking)).thenReturn(booking);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
+
+        bookingService.updateStatus(1L, BookingStatus.APPROVED);
+
+        assertThat(product.getQuantity()).isEqualTo(7);
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    void isOwner_bookingOwnedByUser_returnsTrue() {
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+
+        assertThat(bookingService.isOwner(1L, 1L)).isTrue();
+    }
+
+    @Test
+    void isOwner_bookingNotOwnedByUser_returnsFalse() {
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+
+        assertThat(bookingService.isOwner(1L, 99L)).isFalse();
+    }
+
+    @Test
+    void isOwner_nonExistingBooking_returnsFalse() {
+        when(bookingRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThat(bookingService.isOwner(99L, 1L)).isFalse();
     }
 }

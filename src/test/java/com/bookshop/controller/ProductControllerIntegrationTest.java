@@ -1,6 +1,7 @@
 package com.bookshop.controller;
 
 import com.bookshop.dto.ProductDto;
+import com.bookshop.dto.UserDto;
 import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,6 +134,135 @@ class ProductControllerIntegrationTest {
                         .content(jsonUtils.toJson(updatedDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Updated"));
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_duplicateTitleAndAuthor_returnsConflict() throws Exception {
+        ProductDto dto = ProductDto.builder()
+                .title("Duplicate Book")
+                .author("Duplicate Author")
+                .price(new BigDecimal("19.99"))
+                .quantity(10)
+                .build();
+
+        mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_missingPrice_returnsBadRequest() throws Exception {
+        ProductDto dto = ProductDto.builder()
+                .title("Some Book")
+                .author("Some Author")
+                .build();
+
+        mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_negativePrice_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Bad Book\",\"author\":\"Author\",\"price\":-5.00}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_omitQuantity_defaultsToZero() throws Exception {
+        mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"No Qty Book\",\"author\":\"Author\",\"price\":10.00}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.quantity").value(0));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void create_customerRole_returnsForbidden() throws Exception {
+        ProductDto dto = ProductDto.builder()
+                .title("Forbidden Book")
+                .author("Author")
+                .price(new BigDecimal("10.00"))
+                .build();
+
+        mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void update_nonExistingId_returnsNotFound() throws Exception {
+        mockMvc.perform(patch(ApiRoutes.PRODUCTS + "/99999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Updated\",\"author\":\"Author\",\"price\":10.00}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void delete_managerRole_returnsForbidden() throws Exception {
+        ProductDto dto = ProductDto.builder()
+                .title("Protected Book")
+                .author("Author")
+                .price(new BigDecimal("5.00"))
+                .quantity(5)
+                .build();
+
+        String resp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andReturn().getResponse().getContentAsString();
+        Long id = jsonUtils.fromJson(resp, ProductDto.class).getId();
+
+        mockMvc.perform(delete(ApiRoutes.PRODUCTS + "/{id}", id)
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("manager").roles("MANAGER")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void delete_productWithBookings_returnsConflict() throws Exception {
+        ProductDto dto = ProductDto.builder()
+                .title("Booked Product")
+                .author("Author")
+                .price(new BigDecimal("10.00"))
+                .quantity(10)
+                .build();
+        String prodResp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andReturn().getResponse().getContentAsString();
+        Long productId = jsonUtils.fromJson(prodResp, ProductDto.class).getId();
+
+        String userResp = mockMvc.perform(post(ApiRoutes.AUTH + "/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"prodlink@example.com\",\"name\":\"Link User\",\"password\":\"Password1\"}"))
+                .andReturn().getResponse().getContentAsString();
+        Long userId = jsonUtils.fromJson(userResp, UserDto.class).getId();
+
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":" + userId + ",\"productId\":" + productId + ",\"quantity\":1}"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(delete(ApiRoutes.PRODUCTS + "/{id}", productId))
+                .andExpect(status().isConflict());
     }
 
     @Test

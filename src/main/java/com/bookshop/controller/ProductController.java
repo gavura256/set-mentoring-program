@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bookshop.dto.validation.OnCreate;
 import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import java.util.List;
@@ -49,7 +50,7 @@ public class ProductController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new product")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
-    public ProductDto create(@Validated(OnCreate.class) @RequestBody ProductDto dto) {
+    public ProductDto create(@Validated({Default.class, OnCreate.class}) @RequestBody ProductDto dto) {
         return productService.create(dto);
     }
 

@@ -209,6 +209,151 @@ class BookingControllerIntegrationTest {
     }
 
     @Test
+    void create_insufficientStock_returnsConflict() throws Exception {
+        BookingDto dto = BookingDto.builder()
+                .userId(userId)
+                .productId(productId)
+                .quantity(100)
+                .build();
+
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void create_nonExistingProduct_returnsNotFound() throws Exception {
+        BookingDto dto = BookingDto.builder()
+                .userId(userId)
+                .productId(99999L)
+                .quantity(1)
+                .build();
+
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_nonExistingUser_returnsNotFound() throws Exception {
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(99999L).email("ghost@example.com").password("password").role(Role.MANAGER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":99999,\"productId\":" + productId + ",\"quantity\":1}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void create_customerForOtherUser_returnsForbidden() throws Exception {
+        BookingDto dto = BookingDto.builder()
+                .userId(99999L)
+                .productId(productId)
+                .quantity(1)
+                .build();
+
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_missingUserId_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"productId\":" + productId + ",\"quantity\":1}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_missingProductId_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":" + userId + ",\"quantity\":1}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_zeroQuantity_returnsBadRequest() throws Exception {
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"userId\":" + userId + ",\"productId\":" + productId + ",\"quantity\":0}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void updateStatus_approveWithInsufficientStock_returnsConflict() throws Exception {
+        String prodResp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .with(user("admin").roles("ADMINISTRATOR"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"title\":\"Limited Book\",\"author\":\"Author\",\"price\":10.00,\"quantity\":5}"))
+                .andReturn().getResponse().getContentAsString();
+        Long limitedProductId = jsonUtils.fromJson(prodResp, com.bookshop.dto.ProductDto.class).getId();
+
+        BookingDto dtoA = BookingDto.builder().userId(userId).productId(limitedProductId).quantity(3).build();
+        String respA = mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dtoA)))
+                .andReturn().getResponse().getContentAsString();
+        Long bookingAId = jsonUtils.fromJson(respA, BookingDto.class).getId();
+
+        BookingDto dtoB = BookingDto.builder().userId(userId).productId(limitedProductId).quantity(3).build();
+        String respB = mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dtoB)))
+                .andReturn().getResponse().getContentAsString();
+        Long bookingBId = jsonUtils.fromJson(respB, BookingDto.class).getId();
+
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", bookingAId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", bookingBId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void getByUserId_nonExistingUser_returnsNotFound() throws Exception {
+        mockMvc.perform(get(ApiRoutes.BOOKINGS + "/user/99999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void delete_nonExistingBooking_returnsNotFound() throws Exception {
+        mockMvc.perform(delete(ApiRoutes.BOOKINGS + "/99999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     @WithMockUser(roles = "MANAGER")
     void getByUserId_existingUser_returnsBookings() throws Exception {
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
@@ -221,5 +366,62 @@ class BookingControllerIntegrationTest {
         mockMvc.perform(get(ApiRoutes.BOOKINGS + "/user/{userId}", userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
+    }
+
+    @Test
+    void create_statusInRequest_ignoredAndForcedToPending() throws Exception {
+        // Clients must not be able to set the initial status — it must always be PENDING
+        String body = "{\"userId\":" + userId + ",\"productId\":" + productId + ",\"quantity\":1,\"status\":\"APPROVED\"}";
+
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PENDING"));
+    }
+
+    @Test
+    void create_exactStockQuantity_succeeds() throws Exception {
+        // Booking exactly the available stock (boundary) must succeed
+        BookingDto dto = BookingDto.builder()
+                .userId(userId)
+                .productId(productId)
+                .quantity(50) // product was created with 50 in stock
+                .build();
+
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void approve_decrementsStockCorrectly() throws Exception {
+        BookingDto dto = BookingDto.builder().userId(userId).productId(productId).quantity(3).build();
+        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(user(new CustomUserDetails(
+                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
+                        )))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andReturn().getResponse().getContentAsString();
+        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
+
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"APPROVED\"}"))
+                .andExpect(status().isOk());
+
+        // product stock should now be 47 (50 - 3)
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantity").value(47));
     }
 }
