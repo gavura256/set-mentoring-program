@@ -1,10 +1,8 @@
 package com.bookshop.controller;
 
-import com.bookshop.dto.BookingDto;
-import com.bookshop.dto.UserDto;
-import com.bookshop.model.enums.Role;
+import com.bookshop.dto.UpdateStatusRequest;
+import com.bookshop.model.enums.BookingStatus;
 import com.bookshop.util.JsonUtils;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -55,9 +53,10 @@ class SecurityIntegrationTest {
     @Test
     @WithMockUser(roles = "CUSTOMER")
     void updateBookingStatus_customerRole_returns403() throws Exception {
+        UpdateStatusRequest statusRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"APPROVED\"}"))
+                        .content(jsonUtils.toJson(statusRequest)))
                 .andExpect(status().isForbidden());
     }
 

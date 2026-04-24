@@ -1,7 +1,8 @@
 package com.bookshop.service;
 
 import com.bookshop.mapper.UserMapper;
-import com.bookshop.dto.UserDto;
+import com.bookshop.dto.UserRequest;
+import com.bookshop.dto.UserResponse;
 import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
@@ -37,21 +38,21 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public List<UserDto> findAll() {
+    public List<UserResponse> findAll() {
         return userRepository.findAll().stream()
-                .map(userMapper::toDto)
+                .map(userMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public UserDto findById(Long id) {
+    public UserResponse findById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        return userMapper.toDto(user);
+        return userMapper.toResponse(user);
     }
 
     @Transactional
-    public UserDto create(UserDto dto) {
+    public UserResponse create(UserRequest dto) {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new ResourceAlreadyExistsException("An account with this email already exists");
         }
@@ -74,11 +75,11 @@ public class UserService {
             throw new InvalidOperationException("Password is required for user registration");
         }
         User saved = userRepository.save(user);
-        return userMapper.toDto(saved);
+        return userMapper.toResponse(saved);
     }
 
     @Transactional
-    public UserDto update(Long id, UserDto dto) {
+    public UserResponse update(Long id, UserRequest dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
@@ -107,7 +108,7 @@ public class UserService {
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
-        return userMapper.toDto(userRepository.save(user));
+        return userMapper.toResponse(userRepository.save(user));
     }
 
     @Transactional
