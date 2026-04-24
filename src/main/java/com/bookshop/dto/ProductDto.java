@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import com.bookshop.dto.validation.OnCreate;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Positive;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -40,8 +41,7 @@ public class ProductDto implements Serializable {
     @Schema(description = "Book description", example = "A handbook of agile software craftsmanship")
     private String description;
 
-    @NotNull(groups = OnCreate.class)
-    @Positive
-    @Schema(description = "Stock quantity", example = "50", requiredMode = Schema.RequiredMode.REQUIRED)
-    private Integer quantity;
+    @PositiveOrZero
+    @Schema(description = "Stock quantity", example = "50")
+    private Integer quantity = 0;
 }
