@@ -110,6 +110,16 @@ class AuthControllerIntegrationTest {
     }
 
     @Test
+    @org.springframework.security.test.context.support.WithMockUser(roles = "ADMINISTRATOR")
+    void register_asAdministrator_canCreateAdminUser() throws Exception {
+        mockMvc.perform(post(ApiRoutes.AUTH + "/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"newadmin@example.com\",\"name\":\"New Admin\",\"password\":\"Password1\",\"role\":\"ADMINISTRATOR\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.role").value("ADMINISTRATOR"));
+    }
+
+    @Test
     void register_withAdminRole_forcedToCustomer() throws Exception {
         // Registering with ADMINISTRATOR role must be silently downgraded to CUSTOMER
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
