@@ -9,6 +9,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  sql:
+    init:
+      mode: always
   h2:
     console:
       enabled: false
