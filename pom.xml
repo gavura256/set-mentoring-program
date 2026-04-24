@@ -217,6 +217,64 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/bookshop/BookshopApplication.class</exclude>
+                                <exclude>com/bookshop/config/**</exclude>
+                                <exclude>com/bookshop/model/**</exclude>
+                                <exclude>com/bookshop/dto/**</exclude>
+                                <exclude>com/bookshop/repository/**</exclude>
+                                <exclude>com/bookshop/mapper/**</exclude>
+                                <exclude>com/bookshop/controller/ApiRoutes.class</exclude>
+                                <exclude>com/bookshop/security/CustomUserDetails.class</exclude>
+                                <exclude>com/bookshop/exception/ResourceNotFoundException.class</exclude>
+                                <exclude>com/bookshop/exception/ResourceAlreadyExistsException.class</exclude>
+                                <exclude>com/bookshop/exception/InvalidOperationException.class</exclude>
+                                <exclude>com/bookshop/exception/JsonSerializationException.class</exclude>
+                                <exclude>com/bookshop/validation/ValidPassword.class</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>com/bookshop/BookshopApplication.class</exclude>
+                                <exclude>com/bookshop/config/**</exclude>
+                                <exclude>com/bookshop/model/**</exclude>
+                                <exclude>com/bookshop/dto/**</exclude>
+                                <exclude>com/bookshop/repository/**</exclude>
+                                <exclude>com/bookshop/mapper/**</exclude>
+                                <exclude>com/bookshop/controller/ApiRoutes.class</exclude>
+                                <exclude>com/bookshop/security/CustomUserDetails.class</exclude>
+                                <exclude>com/bookshop/exception/ResourceNotFoundException.class</exclude>
+                                <exclude>com/bookshop/exception/ResourceAlreadyExistsException.class</exclude>
+                                <exclude>com/bookshop/exception/InvalidOperationException.class</exclude>
+                                <exclude>com/bookshop/exception/JsonSerializationException.class</exclude>
+                                <exclude>com/bookshop/validation/ValidPassword.class</exclude>
+                            </excludes>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.50</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
