@@ -32,6 +32,72 @@ com.bookshop
 └── util           # Shared utility classes
 ```
 
+## 🏗️ Architecture
+
+### Application Layers
+
+```
+HTTP Request
+     │
+     ▼
+┌─────────────┐
+│  Controller │  REST endpoints, input validation, OpenAPI annotations
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│   Service   │  Business logic, transaction boundaries
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│  Converter  │  Manual Entity ↔ DTO mapping (@Component beans)
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│ Repository  │  Spring Data JPA interfaces
+└──────┬──────┘
+       │
+       ▼
+┌─────────────┐
+│  Database   │  H2 (dev) / MySQL (prod)
+└─────────────┘
+```
+
+Cross-cutting: `JwtAuthFilter` → `Spring Security` → `GlobalExceptionHandler`
+
+### Database Schema
+
+```
+┌──────────────────────┐        ┌──────────────────────┐
+│        users         │        │       products        │
+├──────────────────────┤        ├──────────────────────┤
+│ id          BIGINT PK│        │ id          BIGINT PK │
+│ name        VARCHAR  │        │ title       VARCHAR   │
+│ email       VARCHAR  │        │ author      VARCHAR   │
+│ password    VARCHAR  │        │ description VARCHAR   │
+│ role        ENUM     │        │ price       DECIMAL   │
+│  CUSTOMER            │        │ quantity    INT        │
+│  MANAGER             │        └──────────┬───────────┘
+│  ADMINISTRATOR       │                   │
+└──────────┬───────────┘                   │
+           │                               │
+           │      ┌────────────────────────┐
+           │      │       bookings         │
+           │      ├────────────────────────┤
+           └─────►│ user_id    BIGINT FK   │◄─────┘
+                  │ product_id BIGINT FK   │
+                  │ quantity   INT         │
+                  │ status     ENUM        │
+                  │  PENDING               │
+                  │  APPROVED              │
+                  │  REJECTED              │
+                  │  CANCELLED             │
+                  │ created_at TIMESTAMP   │
+                  └────────────────────────┘
+```
+
 ## 📋 Requirements
 
 - **Java:** JDK 25
@@ -55,15 +121,27 @@ Uses MySQL database via Docker.
    ```bash
    docker compose up -d
    ```
-2. Run the application with `prod` profile:
+2. Set credentials and run with `prod` profile:
    ```bash
-   ./mvnw spring-boot:run -Dspring.profiles.active=prod
+   # PowerShell
+   $env:DB_USERNAME="myUser"; $env:DB_PASSWORD="myUser"; ./mvnw spring-boot:run "-Dspring-boot.run.profiles=prod"
+
+   # bash / WSL
+   DB_USERNAME=myUser DB_PASSWORD=myUser ./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
    ```
+- **Port:** 8080
+- **Swagger UI:** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+- **Seed data** is loaded automatically on first startup (`data.sql` via `spring.sql.init.mode=always`).
+
+> **Note:** Use `-Dspring-boot.run.profiles=prod` (not `-Dspring.profiles.active=prod`) when running via the Maven plugin — the latter is ignored by the Spring Boot Maven plugin.
 
 ## 🔐 Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `DB_USERNAME` | MySQL username | *(required in prod)* |
+| `DB_PASSWORD` | MySQL password | *(required in prod)* |
+| `MYSQL_HOST` | MySQL host | `localhost` |
 | `APP_SECURITY_JWT_SECRET` | Secret key for JWT signing | `devSecretKey-32bytes-or-longer!!` |
 | `SPRING_PROFILES_ACTIVE` | Active Spring profile | `dev` |
 
