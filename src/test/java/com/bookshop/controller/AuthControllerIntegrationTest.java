@@ -1,6 +1,9 @@
 package com.bookshop.controller;
 
+import com.bookshop.dto.UserRequest;
+import com.bookshop.dto.UserResponse;
 import com.bookshop.dto.auth.LoginRequest;
+import com.bookshop.model.enums.Role;
 import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,17 +32,21 @@ class AuthControllerIntegrationTest {
 
     @Test
     void login_validCredentials_returnsTokenAndUserDetails() throws Exception {
+        UserRequest registerRequest = UserRequest.builder()
+                .email("test_auth@example.com")
+                .name("Auth User")
+                .password("Password1")
+                .build();
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"test_auth@example.com\",\"name\":\"Auth User\",\"password\":\"Password1\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isCreated());
 
-        // Attempt login
         LoginRequest loginRequest = LoginRequest.builder()
                 .email("test_auth@example.com")
                 .password("Password1")
                 .build();
-        
+
         mockMvc.perform(post(ApiRoutes.AUTH + "/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(loginRequest)))
@@ -51,9 +58,14 @@ class AuthControllerIntegrationTest {
 
     @Test
     void register_validUser_returnsCreated() throws Exception {
+        UserRequest registerRequest = UserRequest.builder()
+                .email("new_reg@example.com")
+                .name("New User")
+                .password("Password1")
+                .build();
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"new_reg@example.com\",\"name\":\"New User\",\"password\":\"Password1\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("new_reg@example.com"))
                 .andExpect(jsonPath("$.role").value("CUSTOMER"));
@@ -61,14 +73,19 @@ class AuthControllerIntegrationTest {
 
     @Test
     void register_duplicateEmail_returnsConflict() throws Exception {
+        UserRequest registerRequest = UserRequest.builder()
+                .email("dup_reg@example.com")
+                .name("Dup User")
+                .password("Password1")
+                .build();
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"dup_reg@example.com\",\"name\":\"Dup User\",\"password\":\"Password1\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"dup_reg@example.com\",\"name\":\"Dup User\",\"password\":\"Password1\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isConflict());
     }
 
@@ -87,54 +104,83 @@ class AuthControllerIntegrationTest {
 
     @Test
     void register_invalidEmail_returnsBadRequest() throws Exception {
+        UserRequest registerRequest = UserRequest.builder()
+                .email("not-an-email")
+                .name("Test")
+                .password("Password1")
+                .build();
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"not-an-email\",\"name\":\"Test\",\"password\":\"Password1\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void register_weakPassword_returnsBadRequest() throws Exception {
+        UserRequest registerRequest = UserRequest.builder()
+                .email("weak@example.com")
+                .name("Test")
+                .password("weakpass")
+                .build();
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"weak@example.com\",\"name\":\"Test\",\"password\":\"weakpass\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void register_missingName_returnsBadRequest() throws Exception {
+        UserRequest registerRequest = UserRequest.builder()
+                .email("noname@example.com")
+                .password("Password1")
+                .build();
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"noname@example.com\",\"password\":\"Password1\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @org.springframework.security.test.context.support.WithMockUser(roles = "ADMINISTRATOR")
     void register_asAdministrator_canCreateAdminUser() throws Exception {
+        UserRequest registerRequest = UserRequest.builder()
+                .email("newadmin@example.com")
+                .name("New Admin")
+                .password("Password1")
+                .role(Role.ADMINISTRATOR)
+                .build();
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"newadmin@example.com\",\"name\":\"New Admin\",\"password\":\"Password1\",\"role\":\"ADMINISTRATOR\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.role").value("ADMINISTRATOR"));
     }
 
     @Test
     void register_withAdminRole_forcedToCustomer() throws Exception {
-        // Registering with ADMINISTRATOR role must be silently downgraded to CUSTOMER
+        UserRequest registerRequest = UserRequest.builder()
+                .email("tryadmin@example.com")
+                .name("Hacker")
+                .password("Password1")
+                .role(Role.ADMINISTRATOR)
+                .build();
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"tryadmin@example.com\",\"name\":\"Hacker\",\"password\":\"Password1\",\"role\":\"ADMINISTRATOR\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.role").value("CUSTOMER"));
     }
 
     @Test
     void register_passwordNotReturnedInResponse() throws Exception {
-        // password field is WRITE_ONLY — must not appear in the response
+        UserRequest registerRequest = UserRequest.builder()
+                .email("nopwd@example.com")
+                .name("Test")
+                .password("Password1")
+                .build();
         mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"nopwd@example.com\",\"name\":\"Test\",\"password\":\"Password1\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.password").doesNotExist());
     }

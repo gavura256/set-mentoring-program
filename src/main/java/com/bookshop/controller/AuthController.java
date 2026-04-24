@@ -1,8 +1,9 @@
 package com.bookshop.controller;
 
+import com.bookshop.dto.UserRequest;
+import com.bookshop.dto.UserResponse;
 import com.bookshop.dto.auth.LoginRequest;
 import com.bookshop.dto.auth.LoginResponse;
-import com.bookshop.dto.UserDto;
 import com.bookshop.security.CustomUserDetails;
 import com.bookshop.security.JwtUtils;
 import com.bookshop.service.UserService;
@@ -51,7 +52,7 @@ public class AuthController {
     @PostMapping(ApiRoutes.REGISTER)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Register a new user")
-    public UserDto register(@Valid @RequestBody UserDto dto) {
+    public UserResponse register(@Valid @RequestBody UserRequest dto) {
         return userService.create(dto);
     }
 }

@@ -1,6 +1,7 @@
 package com.bookshop.mapper;
 
-import com.bookshop.dto.UserDto;
+import com.bookshop.dto.UserRequest;
+import com.bookshop.dto.UserResponse;
 import com.bookshop.model.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -8,9 +9,8 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-    @Mapping(target = "password", ignore = true)
-    UserDto toDto(User user);
+    UserResponse toResponse(User user);
 
     @Mapping(target = "id", ignore = true)
-    User toEntity(UserDto dto);
+    User toEntity(UserRequest dto);
 }

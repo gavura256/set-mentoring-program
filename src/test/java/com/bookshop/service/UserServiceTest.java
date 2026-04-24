@@ -1,7 +1,8 @@
 package com.bookshop.service;
 
 import com.bookshop.mapper.UserMapper;
-import com.bookshop.dto.UserDto;
+import com.bookshop.dto.UserRequest;
+import com.bookshop.dto.UserResponse;
 import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
@@ -51,7 +52,8 @@ class UserServiceTest {
     private UserService userService;
 
     private User user;
-    private UserDto userDto;
+    private UserRequest userRequest;
+    private UserResponse userResponse;
 
     @BeforeEach
     void setUp() {
@@ -62,11 +64,17 @@ class UserServiceTest {
                 .role(Role.CUSTOMER)
                 .build();
 
-        userDto = UserDto.builder()
-                .id(1L)
+        userRequest = UserRequest.builder()
                 .email("john@example.com")
                 .name("John Doe")
                 .password("password")
+                .role(Role.CUSTOMER)
+                .build();
+
+        userResponse = UserResponse.builder()
+                .id(1L)
+                .email("john@example.com")
+                .name("John Doe")
                 .role(Role.CUSTOMER)
                 .build();
     }
@@ -74,9 +82,9 @@ class UserServiceTest {
     @Test
     void findAll_returnsAllUsers() {
         when(userRepository.findAll()).thenReturn(List.of(user));
-        when(userMapper.toDto(user)).thenReturn(userDto);
+        when(userMapper.toResponse(user)).thenReturn(userResponse);
 
-        List<UserDto> result = userService.findAll();
+        List<UserResponse> result = userService.findAll();
 
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().getEmail()).isEqualTo("john@example.com");
@@ -86,7 +94,7 @@ class UserServiceTest {
     void findAll_returnsEmptyListWhenNoUsers() {
         when(userRepository.findAll()).thenReturn(Collections.emptyList());
 
-        List<UserDto> result = userService.findAll();
+        List<UserResponse> result = userService.findAll();
 
         assertThat(result).isEmpty();
     }
@@ -94,9 +102,9 @@ class UserServiceTest {
     @Test
     void findById_existingId_returnsDto() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userMapper.toDto(user)).thenReturn(userDto);
+        when(userMapper.toResponse(user)).thenReturn(userResponse);
 
-        UserDto result = userService.findById(1L);
+        UserResponse result = userService.findById(1L);
 
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getEmail()).isEqualTo("john@example.com");
@@ -115,12 +123,12 @@ class UserServiceTest {
     @WithMockUser(roles = "ADMINISTRATOR")
     void create_newEmail_returnsCreatedDto() {
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.empty());
-        when(userMapper.toEntity(userDto)).thenReturn(user);
+        when(userMapper.toEntity(userRequest)).thenReturn(user);
         when(passwordEncoder.encode("password")).thenReturn("encoded");
         when(userRepository.save(user)).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userDto);
+        when(userMapper.toResponse(user)).thenReturn(userResponse);
 
-        UserDto result = userService.create(userDto);
+        UserResponse result = userService.create(userRequest);
 
         assertThat(result.getEmail()).isEqualTo("john@example.com");
         verify(userRepository).save(user);
@@ -130,7 +138,7 @@ class UserServiceTest {
     void create_duplicateEmail_throwsAlreadyExistsException() {
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> userService.create(userDto))
+        assertThatThrownBy(() -> userService.create(userRequest))
                 .isInstanceOf(ResourceAlreadyExistsException.class)
                 .hasMessageContaining("An account with this email already exists");
     }
@@ -140,7 +148,7 @@ class UserServiceTest {
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void update_existingId_updatesUser() {
-        UserDto updateDto = UserDto.builder()
+        UserRequest updateRequest = UserRequest.builder()
                 .name("Jane Doe")
                 .email("jane@example.com")
                 .role(Role.MANAGER)
@@ -148,9 +156,9 @@ class UserServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(userDto);
+        when(userMapper.toResponse(user)).thenReturn(userResponse);
 
-        UserDto result = userService.update(1L, updateDto);
+        UserResponse result = userService.update(1L, updateRequest);
 
         assertThat(user.getName()).isEqualTo("Jane Doe");
         assertThat(user.getEmail()).isEqualTo("jane@example.com");
@@ -163,7 +171,7 @@ class UserServiceTest {
     void update_nonExistingId_throwsNotFoundException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.update(99L, UserDto.builder().email("test@example.com").name("Test").build()))
+        assertThatThrownBy(() -> userService.update(99L, UserRequest.builder().email("test@example.com").name("Test").build()))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
     }
@@ -189,11 +197,11 @@ class UserServiceTest {
 
     @Test
     void create_nullPassword_throwsInvalidOperationException() {
-        userDto.setPassword(null);
+        userRequest.setPassword(null);
         when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.empty());
-        when(userMapper.toEntity(userDto)).thenReturn(user);
+        when(userMapper.toEntity(userRequest)).thenReturn(user);
 
-        assertThatThrownBy(() -> userService.create(userDto))
+        assertThatThrownBy(() -> userService.create(userRequest))
                 .isInstanceOf(InvalidOperationException.class)
                 .hasMessageContaining("Password is required");
     }
@@ -211,7 +219,7 @@ class UserServiceTest {
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void update_duplicateEmail_throwsAlreadyExistsException() {
-        UserDto updateDto = UserDto.builder()
+        UserRequest updateRequest = UserRequest.builder()
                 .name("John Doe")
                 .email("other@example.com")
                 .build();
@@ -220,7 +228,7 @@ class UserServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.findByEmail("other@example.com")).thenReturn(Optional.of(other));
 
-        assertThatThrownBy(() -> userService.update(1L, updateDto))
+        assertThatThrownBy(() -> userService.update(1L, updateRequest))
                 .isInstanceOf(ResourceAlreadyExistsException.class)
                 .hasMessageContaining("email already exists");
     }
@@ -228,7 +236,7 @@ class UserServiceTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void update_roleChangeByNonAdmin_throwsAccessDeniedException() {
-        UserDto updateDto = UserDto.builder()
+        UserRequest updateRequest = UserRequest.builder()
                 .name("John Doe")
                 .email("john@example.com")
                 .role(Role.ADMINISTRATOR)
@@ -236,7 +244,7 @@ class UserServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        assertThatThrownBy(() -> userService.update(1L, updateDto))
+        assertThatThrownBy(() -> userService.update(1L, updateRequest))
                 .isInstanceOf(AccessDeniedException.class);
     }
 }

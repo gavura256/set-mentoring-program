@@ -2,7 +2,10 @@ package com.bookshop.controller;
 
 import com.bookshop.dto.BookingDto;
 import com.bookshop.dto.ProductDto;
-import com.bookshop.dto.UserDto;
+import com.bookshop.dto.UpdateStatusRequest;
+import com.bookshop.dto.UserRequest;
+import com.bookshop.dto.UserResponse;
+import com.bookshop.model.enums.BookingStatus;
 import com.bookshop.model.enums.Role;
 import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,12 +46,17 @@ class BookingControllerIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        UserRequest registerRequest = UserRequest.builder()
+                .email("booking_user@example.com")
+                .name("Booking User")
+                .password("Password1")
+                .build();
         String userResp = mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"booking_user@example.com\",\"name\":\"Booking User\",\"password\":\"Password1\",\"role\":\"CUSTOMER\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
-        userId = jsonUtils.fromJson(userResp, UserDto.class).getId();
+        userId = jsonUtils.fromJson(userResp, UserResponse.class).getId();
 
         ProductDto product = ProductDto.builder()
                 .title("Booking Book")
@@ -130,9 +138,10 @@ class BookingControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
+        UpdateStatusRequest statusRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"APPROVED\"}"))
+                        .content(jsonUtils.toJson(statusRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APPROVED"));
     }
@@ -163,9 +172,10 @@ class BookingControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
+        UpdateStatusRequest statusRequest = UpdateStatusRequest.builder().status(BookingStatus.CANCELLED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"CANCELLED\"}")
+                        .content(jsonUtils.toJson(statusRequest))
                         .with(user(new CustomUserDetails(
                                 User.builder().id(99L).email("manager@example.com").password("password").role(Role.MANAGER).build()
                         ))))
@@ -185,9 +195,10 @@ class BookingControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
+        UpdateStatusRequest statusRequest = UpdateStatusRequest.builder().status(BookingStatus.CANCELLED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"CANCELLED\"}"))
+                        .content(jsonUtils.toJson(statusRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CANCELLED"));
     }
@@ -245,12 +256,17 @@ class BookingControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void create_nonExistingUser_returnsNotFound() throws Exception {
+        BookingDto dto = BookingDto.builder()
+                .userId(99999L)
+                .productId(productId)
+                .quantity(1)
+                .build();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .with(user(new CustomUserDetails(
                                 User.builder().id(99999L).email("ghost@example.com").password("password").role(Role.MANAGER).build()
                         )))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"userId\":99999,\"productId\":" + productId + ",\"quantity\":1}"))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isNotFound());
     }
 
@@ -274,39 +290,58 @@ class BookingControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void create_missingUserId_returnsBadRequest() throws Exception {
+        BookingDto dto = BookingDto.builder()
+                .productId(productId)
+                .quantity(1)
+                .build();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"productId\":" + productId + ",\"quantity\":1}"))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "MANAGER")
     void create_missingProductId_returnsBadRequest() throws Exception {
+        BookingDto dto = BookingDto.builder()
+                .userId(userId)
+                .quantity(1)
+                .build();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"userId\":" + userId + ",\"quantity\":1}"))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "MANAGER")
     void create_zeroQuantity_returnsBadRequest() throws Exception {
+        BookingDto dto = BookingDto.builder()
+                .userId(userId)
+                .productId(productId)
+                .quantity(0)
+                .build();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"userId\":" + userId + ",\"productId\":" + productId + ",\"quantity\":0}"))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "MANAGER")
     void updateStatus_approveWithInsufficientStock_returnsConflict() throws Exception {
+        ProductDto limitedProduct = ProductDto.builder()
+                .title("Limited Book")
+                .author("Author")
+                .price(new BigDecimal("10.00"))
+                .quantity(5)
+                .build();
         String prodResp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .with(user("admin").roles("ADMINISTRATOR"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"Limited Book\",\"author\":\"Author\",\"price\":10.00,\"quantity\":5}"))
+                        .content(jsonUtils.toJson(limitedProduct)))
                 .andReturn().getResponse().getContentAsString();
-        Long limitedProductId = jsonUtils.fromJson(prodResp, com.bookshop.dto.ProductDto.class).getId();
+        Long limitedProductId = jsonUtils.fromJson(prodResp, ProductDto.class).getId();
 
         BookingDto dtoA = BookingDto.builder().userId(userId).productId(limitedProductId).quantity(3).build();
         String respA = mockMvc.perform(post(ApiRoutes.BOOKINGS)
@@ -328,14 +363,15 @@ class BookingControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         Long bookingBId = jsonUtils.fromJson(respB, BookingDto.class).getId();
 
+        UpdateStatusRequest approveRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", bookingAId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"APPROVED\"}"))
+                        .content(jsonUtils.toJson(approveRequest)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", bookingBId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"APPROVED\"}"))
+                        .content(jsonUtils.toJson(approveRequest)))
                 .andExpect(status().isConflict());
     }
 
@@ -370,15 +406,21 @@ class BookingControllerIntegrationTest {
 
     @Test
     void create_statusInRequest_ignoredAndForcedToPending() throws Exception {
-        // Clients must not be able to set the initial status — it must always be PENDING
-        String body = "{\"userId\":" + userId + ",\"productId\":" + productId + ",\"quantity\":1,\"status\":\"APPROVED\"}";
+        // Clients must not be able to set the initial status — it must always be PENDING.
+        // BookingDto.status is READ_ONLY so Jackson serializes it; server ignores it on input.
+        BookingDto dto = BookingDto.builder()
+                .userId(userId)
+                .productId(productId)
+                .quantity(1)
+                .status(BookingStatus.APPROVED)
+                .build();
 
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .with(user(new CustomUserDetails(
                                 User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
                         )))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(body))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("PENDING"));
     }
@@ -414,9 +456,10 @@ class BookingControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
         Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
 
+        UpdateStatusRequest approveRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"APPROVED\"}"))
+                        .content(jsonUtils.toJson(approveRequest)))
                 .andExpect(status().isOk());
 
         // product stock should now be 47 (50 - 3)

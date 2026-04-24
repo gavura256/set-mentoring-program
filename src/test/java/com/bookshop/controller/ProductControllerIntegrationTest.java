@@ -1,7 +1,9 @@
 package com.bookshop.controller;
 
+import com.bookshop.dto.BookingDto;
 import com.bookshop.dto.ProductDto;
-import com.bookshop.dto.UserDto;
+import com.bookshop.dto.UserRequest;
+import com.bookshop.dto.UserResponse;
 import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -174,18 +176,28 @@ class ProductControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void create_negativePrice_returnsBadRequest() throws Exception {
+        ProductDto dto = ProductDto.builder()
+                .title("Bad Book")
+                .author("Author")
+                .price(new BigDecimal("-5.00"))
+                .build();
         mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"Bad Book\",\"author\":\"Author\",\"price\":-5.00}"))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser(roles = "MANAGER")
     void create_omitQuantity_defaultsToZero() throws Exception {
+        ProductDto dto = ProductDto.builder()
+                .title("No Qty Book")
+                .author("Author")
+                .price(new BigDecimal("10.00"))
+                .build();
         mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"No Qty Book\",\"author\":\"Author\",\"price\":10.00}"))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.quantity").value(0));
     }
@@ -208,9 +220,14 @@ class ProductControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void update_nonExistingId_returnsNotFound() throws Exception {
+        ProductDto dto = ProductDto.builder()
+                .title("Updated")
+                .author("Author")
+                .price(new BigDecimal("10.00"))
+                .build();
         mockMvc.perform(patch(ApiRoutes.PRODUCTS + "/99999")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":\"Updated\",\"author\":\"Author\",\"price\":10.00}"))
+                        .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isNotFound());
     }
 
@@ -238,7 +255,7 @@ class ProductControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void delete_productWithBookings_returnsConflict() throws Exception {
-        ProductDto dto = ProductDto.builder()
+        ProductDto productRequest = ProductDto.builder()
                 .title("Booked Product")
                 .author("Author")
                 .price(new BigDecimal("10.00"))
@@ -246,19 +263,29 @@ class ProductControllerIntegrationTest {
                 .build();
         String prodResp = mockMvc.perform(post(ApiRoutes.PRODUCTS)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(dto)))
+                        .content(jsonUtils.toJson(productRequest)))
                 .andReturn().getResponse().getContentAsString();
         Long productId = jsonUtils.fromJson(prodResp, ProductDto.class).getId();
 
+        UserRequest registerRequest = UserRequest.builder()
+                .email("prodlink@example.com")
+                .name("Link User")
+                .password("Password1")
+                .build();
         String userResp = mockMvc.perform(post(ApiRoutes.AUTH + "/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"prodlink@example.com\",\"name\":\"Link User\",\"password\":\"Password1\"}"))
+                        .content(jsonUtils.toJson(registerRequest)))
                 .andReturn().getResponse().getContentAsString();
-        Long userId = jsonUtils.fromJson(userResp, UserDto.class).getId();
+        Long userId = jsonUtils.fromJson(userResp, UserResponse.class).getId();
 
+        BookingDto bookingRequest = BookingDto.builder()
+                .userId(userId)
+                .productId(productId)
+                .quantity(1)
+                .build();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"userId\":" + userId + ",\"productId\":" + productId + ",\"quantity\":1}"))
+                        .content(jsonUtils.toJson(bookingRequest)))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(delete(ApiRoutes.PRODUCTS + "/{id}", productId))
