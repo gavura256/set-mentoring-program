@@ -15,5 +15,4 @@ spring:
         web-allow-others: false
   jpa:
     hibernate:
-      #change ddl-auto to 'update' if you don't want to clean data each time
-      ddl-auto: create
+      ddl-auto: validate
