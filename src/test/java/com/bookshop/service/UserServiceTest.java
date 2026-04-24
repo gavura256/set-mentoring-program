@@ -2,8 +2,11 @@ package com.bookshop.service;
 
 import com.bookshop.mapper.UserMapper;
 import com.bookshop.dto.UserDto;
+import com.bookshop.exception.InvalidOperationException;
 import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
+import com.bookshop.model.Booking;
+import org.springframework.security.access.AccessDeniedException;
 import com.bookshop.model.User;
 import com.bookshop.model.enums.Role;
 import com.bookshop.repository.BookingRepository;
@@ -182,5 +185,58 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.delete(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
+    }
+
+    @Test
+    void create_nullPassword_throwsInvalidOperationException() {
+        userDto.setPassword(null);
+        when(userRepository.findByEmail("john@example.com")).thenReturn(Optional.empty());
+        when(userMapper.toEntity(userDto)).thenReturn(user);
+
+        assertThatThrownBy(() -> userService.create(userDto))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Password is required");
+    }
+
+    @Test
+    void delete_userWithBookings_throwsInvalidOperationException() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(bookingRepository.findByUserIdWithFetch(1L)).thenReturn(List.of(Booking.builder().build()));
+
+        assertThatThrownBy(() -> userService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Cannot delete user with existing bookings");
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void update_duplicateEmail_throwsAlreadyExistsException() {
+        UserDto updateDto = UserDto.builder()
+                .name("John Doe")
+                .email("other@example.com")
+                .build();
+        User other = User.builder().id(2L).email("other@example.com").build();
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("other@example.com")).thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> userService.update(1L, updateDto))
+                .isInstanceOf(ResourceAlreadyExistsException.class)
+                .hasMessageContaining("email already exists");
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void update_roleChangeByNonAdmin_throwsAccessDeniedException() {
+        UserDto updateDto = UserDto.builder()
+                .name("John Doe")
+                .email("john@example.com")
+                .role(Role.ADMINISTRATOR)
+                .build();
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> userService.update(1L, updateDto))
+                .isInstanceOf(AccessDeniedException.class);
     }
 }

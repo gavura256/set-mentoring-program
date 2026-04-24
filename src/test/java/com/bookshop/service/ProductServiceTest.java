@@ -2,6 +2,8 @@ package com.bookshop.service;
 
 import com.bookshop.mapper.ProductMapper;
 import com.bookshop.dto.ProductDto;
+import com.bookshop.exception.InvalidOperationException;
+import com.bookshop.exception.ResourceAlreadyExistsException;
 import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.Product;
 import com.bookshop.repository.BookingRepository;
@@ -171,5 +173,24 @@ class ProductServiceTest {
         assertThatThrownBy(() -> productService.delete(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
+    }
+
+    @Test
+    void create_duplicateTitleAndAuthor_throwsAlreadyExistsException() {
+        when(productRepository.existsByTitleAndAuthor("Clean Code", "Robert C. Martin")).thenReturn(true);
+
+        assertThatThrownBy(() -> productService.create(productDto))
+                .isInstanceOf(ResourceAlreadyExistsException.class)
+                .hasMessageContaining("already exists");
+    }
+
+    @Test
+    void delete_productWithBookings_throwsInvalidOperationException() {
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(bookingRepository.existsByProductId(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> productService.delete(1L))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Cannot delete product with existing bookings");
     }
 }
