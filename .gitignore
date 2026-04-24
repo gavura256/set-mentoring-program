@@ -42,6 +42,8 @@ out/
 # OS
 .DS_Store
 Thumbs.db
-/.claude/*
+# Claude Code – keep project config visible for review; ignore only personal settings
+/.claude/settings.local.json
+
+# Allure test reports (generated artefacts)
 /.allure/*
-/CLAUDE.md
