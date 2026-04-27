@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class ProductControllerIntegrationTest extends AbstractIntegrationTest {
@@ -241,7 +242,7 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTest {
         Long id = jsonUtils.fromJson(resp, ProductDto.class).getId();
 
         mockMvc.perform(delete(ApiRoutes.PRODUCTS + "/{id}", id)
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("manager").roles("MANAGER")))
+                        .with(user("manager").roles("MANAGER")))
                 .andExpect(status().isForbidden());
     }
 

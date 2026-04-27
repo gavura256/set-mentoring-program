@@ -2,7 +2,6 @@ package com.bookshop.controller;
 
 import com.bookshop.AbstractIntegrationTest;
 import com.bookshop.dto.UserRequest;
-import com.bookshop.dto.UserResponse;
 import com.bookshop.dto.auth.LoginRequest;
 import com.bookshop.model.enums.Role;
 import com.bookshop.util.JsonUtils;
