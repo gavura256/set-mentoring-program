@@ -16,12 +16,12 @@ import org.springframework.http.MediaType;
 import com.bookshop.model.User;
 import com.bookshop.security.CustomUserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
-
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import java.math.BigDecimal;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -73,6 +73,30 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
     }
 
+    private RequestPostProcessor asCustomer() {
+        return user(
+                new CustomUserDetails(
+                        User.builder()
+                                .id(userId)
+                                .email("booking_user@example.com")
+                                .password("password")
+                                .role(Role.CUSTOMER)
+                                .build()
+                ));
+    }
+
+    private RequestPostProcessor asManager() {
+        return user(
+                new CustomUserDetails(
+                        User.builder()
+                                .id(userId)
+                                .email("booking_user@example.com")
+                                .password("password")
+                                .role(Role.MANAGER)
+                                .build()
+                ));
+    }
+
     @Test
     @WithMockUser(roles = "MANAGER")
     void getAll_returnsOkWithList() throws Exception {
@@ -86,9 +110,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     void create_validBooking_returnsCreatedWithPendingStatus() throws Exception {
         BookingDto dto = buildBookingDto();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
@@ -99,9 +121,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     void getById_existingBooking_returnsOk() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
@@ -123,9 +143,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     void updateStatus_pendingBooking_approvesSuccessfully() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
@@ -144,9 +162,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     void create_managerRole_returnsCreated() throws Exception {
         BookingDto dto = buildBookingDto();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.MANAGER).build()
-                        )))
+                        .with(asManager())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
@@ -157,9 +173,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     void cancel_managerRole_returnsCancelledStatus() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
@@ -180,9 +194,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @WithMockUser(roles = "ADMINISTRATOR")
     void cancel_pendingBooking_returnsCancelledStatus() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
@@ -200,9 +212,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @WithMockUser(roles = "ADMINISTRATOR")
     void delete_existingBooking_returnsNoContent() throws Exception {
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(buildBookingDto())))
                 .andReturn().getResponse().getContentAsString();
@@ -221,9 +231,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isConflict());
@@ -238,9 +246,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isNotFound());
@@ -272,9 +278,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isForbidden());
@@ -338,9 +342,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
 
         BookingDto dtoA = BookingDto.builder().userId(userId).productId(limitedProductId).quantity(3).build();
         String respA = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dtoA)))
                 .andReturn().getResponse().getContentAsString();
@@ -348,9 +350,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
 
         BookingDto dtoB = BookingDto.builder().userId(userId).productId(limitedProductId).quantity(3).build();
         String respB = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dtoB)))
                 .andReturn().getResponse().getContentAsString();
@@ -386,9 +386,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @WithMockUser(roles = "MANAGER")
     void getByUserId_existingUser_returnsBookings() throws Exception {
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                .with(user(new CustomUserDetails(
-                        User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                )))
+                .with(asCustomer())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(jsonUtils.toJson(buildBookingDto())));
 
@@ -409,9 +407,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated())
@@ -428,9 +424,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                 .build();
 
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andExpect(status().isCreated());
@@ -441,9 +435,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     void approve_decrementsStockCorrectly() throws Exception {
         BookingDto dto = BookingDto.builder().userId(userId).productId(productId).quantity(3).build();
         String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(user(new CustomUserDetails(
-                                User.builder().id(userId).email("booking_user@example.com").password("password").role(Role.CUSTOMER).build()
-                        )))
+                        .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
                 .andReturn().getResponse().getContentAsString();
