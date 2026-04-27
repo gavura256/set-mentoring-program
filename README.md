@@ -2,21 +2,21 @@
 
 A RESTful web service for a bookshop application, providing management for products, users, and bookings.
 
-## 🚀 Tech Stack
+## Tech Stack
 
 - **Language:** Java 25
-- **Framework:** Spring Boot 3.5.3
+- **Framework:** Spring Boot 3.5.14
 - **Build Tool:** Maven
-- **Persistence:** Spring Data JPA, Hibernate
+- **Persistence:** Spring Data JPA, Hibernate, Flyway
 - **Database:**
-  - **H2** (In-memory, for development and testing)
-  - **MySQL** (For production-like environments)
-- **Security:** Spring Security with JWT (JSON Web Token)
+  - **H2** (in-memory, local development)
+  - **MySQL 5.7** (production and integration tests via Testcontainers)
+- **Security:** Spring Security with JWT
 - **API Documentation:** SpringDoc OpenAPI (Swagger UI)
-- **Testing:** JUnit 5, Mockito, AssertJ, Allure
-- **Other:** Lombok, Docker Compose
+- **Testing:** JUnit 5, Mockito, AssertJ, Allure, Testcontainers
+- **Other:** Lombok, MapStruct, Docker Compose
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 com.bookshop
@@ -32,7 +32,7 @@ com.bookshop
 └── util           # Shared utility classes
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ### Application Layers
 
@@ -98,44 +98,85 @@ Cross-cutting: `JwtAuthFilter` → `Spring Security` → `GlobalExceptionHandler
                   └────────────────────────┘
 ```
 
-## 📋 Requirements
+## Requirements
 
 - **Java:** JDK 25
-- **Maven:** 3.9.9 (via Maven Wrapper — no local Maven install required)
-- **Docker & Docker Compose:** Required for running the MySQL database in `prod` profile.
+- **Maven:** 3.9+ (via Maven Wrapper — no local Maven install required)
+- **Docker & Docker Compose:** Required for integration tests and production profile
 
-## 🛠️ Setup & Run
+## Setup & Run
 
-### Development (Default)
-Runs with H2 in-memory database and `dev` profile.
+### Local Development (H2, default)
+
+Runs with H2 in-memory database and the `dev` profile:
+
 ```bash
 ./mvnw spring-boot:run
 ```
-- **Port:** 8080
-- **Swagger UI:** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
-- **H2 Console:** [http://localhost:8080/h2-console](http://localhost:8080/h2-console) (JDBC URL: `jdbc:h2:mem:appDb`)
 
-### Production-like
-Uses MySQL database via Docker.
-1. Start the database:
-   ```bash
-   docker compose up -d
-   ```
-2. Set credentials and run with `prod` profile:
-   ```bash
-   # PowerShell
-   $env:DB_USERNAME="myUser"; $env:DB_PASSWORD="myUser"; ./mvnw spring-boot:run "-Dspring-boot.run.profiles=prod"
-
-   # bash / WSL
-   DB_USERNAME=myUser DB_PASSWORD=myUser ./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
-   ```
 - **Port:** 8080
-- **Swagger UI:** [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
-- **Seed data** is loaded automatically on first startup (`data.sql` via `spring.sql.init.mode=always`).
+- **Swagger UI:** http://localhost:8080/swagger-ui/index.html
+- **H2 Console:** http://localhost:8080/h2-console (JDBC URL: `jdbc:h2:mem:appDb`)
+
+### Docker Compose (MySQL + App)
+
+Builds the production image and starts both the database and the application:
+
+1. Copy the environment template and fill in credentials:
+   ```bash
+   cp .env.example .env
+   # edit .env — set MYSQL_ROOT_PASSWORD, MYSQL_USER, MYSQL_PASSWORD, APP_SECURITY_JWT_SECRET
+   ```
+2. Start everything:
+   ```bash
+   docker compose up --build
+   ```
+
+The `app` service waits for the `db` healthcheck to pass before starting. Seed data is applied automatically via Flyway on first startup.
+
+- **Port:** 8080
+- **Swagger UI:** http://localhost:8080/swagger-ui/index.html
+
+### Running the App Against MySQL Without Docker Build
+
+Start only the database, then run the app via Maven with the `prod` profile:
+
+```bash
+docker compose up -d db
+
+# bash / WSL
+DB_USERNAME=<user> DB_PASSWORD=<pass> ./mvnw spring-boot:run -Dspring-boot.run.profiles=prod
+
+# PowerShell
+$env:DB_USERNAME="<user>"; $env:DB_PASSWORD="<pass>"; ./mvnw spring-boot:run "-Dspring-boot.run.profiles=prod"
+```
 
 > **Note:** Use `-Dspring-boot.run.profiles=prod` (not `-Dspring.profiles.active=prod`) when running via the Maven plugin — the latter is ignored by the Spring Boot Maven plugin.
 
-## 🔐 Environment Variables
+## Running Tests
+
+Integration tests use **Testcontainers** — they spin up a real MySQL 5.7 container automatically. **Docker must be running** before executing the test suite.
+
+```bash
+# Run all tests
+./mvnw test
+
+# Run a specific test class
+./mvnw -Dtest=ClassName test
+
+# Run tests + enforce JaCoCo coverage thresholds (≥70% instruction, ≥50% branch)
+./mvnw verify
+```
+
+### Testcontainers on Rancher Desktop (Windows)
+
+If you use Rancher Desktop instead of Docker Desktop, create `~/.testcontainers.properties` with:
+
+```properties
+docker.host=npipe:////./pipe/docker_engine
+```
+
+## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -145,7 +186,9 @@ Uses MySQL database via Docker.
 | `APP_SECURITY_JWT_SECRET` | Secret key for JWT signing | `devSecretKey-32bytes-or-longer!!` |
 | `SPRING_PROFILES_ACTIVE` | Active Spring profile | `dev` |
 
-## 📜 Scripts
+All production credentials are loaded from `.env` (gitignored). Use `.env.example` as the template.
+
+## Scripts
 
 - **Build project:** `./mvnw clean install`
 - **Run all tests:** `./mvnw test`
@@ -155,13 +198,30 @@ Uses MySQL database via Docker.
   ./mvnw allure:serve
   ```
 
-## 🧪 Testing
+## Testing
 
-- **Unit Tests:** `src/test/java/com/bookshop/service/` — uses Mockito for mocking dependencies.
-- **Integration Tests:** `src/test/java/com/bookshop/controller/` — uses `MockMvc` and `@SpringBootTest`.
+- **Unit Tests:** `src/test/java/com/bookshop/service/` — Mockito-based, no container required.
+- **Integration Tests:** `src/test/java/com/bookshop/controller/` — `MockMvc` + `@SpringBootTest` backed by a real MySQL 5.7 container via Testcontainers.
+  - All controller test classes extend `AbstractIntegrationTest`.
+  - `TestContainersConfig` uses `@ServiceConnection` to auto-wire the datasource from the container.
+  - The `dev` Spring profile is activated during tests; Testcontainers overrides the datasource URL.
 - **Database Isolation:** Integration tests use `@Transactional` to roll back after each test.
+- **CVE note:** `commons-compress` is pinned to `1.27.1` in `dependencyManagement` to address CVE-2024-25710 and CVE-2024-26308 (transitive via Testcontainers).
 
-## 📡 API Endpoints
+## Docker Image
+
+The `Dockerfile` uses a two-stage build:
+
+- **Stage 1** (`eclipse-temurin:25-jdk-alpine`): Maven build with BuildKit cache mount for the local Maven repository, then layered-jar extraction.
+- **Stage 2** (`eclipse-temurin:25-jre-alpine`): Minimal runtime image (~131 MB), non-root user `bookshop`, `devtools` and `h2` excluded from the production jar.
+
+Build the image standalone:
+
+```bash
+docker build -t bookshop-api .
+```
+
+## API Endpoints
 
 ### Authentication — `/api/auth`
 | Method | Path | Description | Auth |
@@ -198,7 +258,7 @@ Uses MySQL database via Docker.
 
 **Booking statuses:** `PENDING` → `APPROVED` / `REJECTED` / `CANCELLED`
 
-## ⚠️ Error Handling
+## Error Handling
 
 All errors follow a consistent response format:
 
@@ -223,6 +283,6 @@ All errors follow a consistent response format:
 | Unauthorized | 401 Unauthorized |
 | Forbidden | 403 Forbidden |
 
-## 🗂️ Bruno Collection
+## Bruno Collection
 
 A Bruno collection is available in `bruno-collection/` for API testing. Import it directly into [Bruno](https://usebruno.com) and configure the `local` environment.
