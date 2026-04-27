@@ -47,3 +47,4 @@ Thumbs.db
 
 # Allure test reports (generated artefacts)
 /.allure/*
+.env
