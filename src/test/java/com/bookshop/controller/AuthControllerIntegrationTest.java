@@ -1,5 +1,6 @@
 package com.bookshop.controller;
 
+import com.bookshop.AbstractIntegrationTest;
 import com.bookshop.dto.UserRequest;
 import com.bookshop.dto.UserResponse;
 import com.bookshop.dto.auth.LoginRequest;
@@ -7,22 +8,14 @@ import com.bookshop.model.enums.Role;
 import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("dev")
-@Transactional
-class AuthControllerIntegrationTest {
+class AuthControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     MockMvc mockMvc;
