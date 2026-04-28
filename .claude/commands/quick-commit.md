@@ -9,5 +9,6 @@ description: "Stage all changes and commit with a descriptive message"
    - Starts with a type prefix (feat:, fix:, refactor:, docs:, test:, chore:)
    - Briefly describes what changed
    - Uses imperative mood ("Add feature" not "Added feature")
+5. Never add Co-Authored-By, only required message
 
 Example: `feat: add product search functionality`
