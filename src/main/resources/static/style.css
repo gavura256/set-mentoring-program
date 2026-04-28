@@ -1,0 +1,19 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.navbar {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, .025);
+}
+
+.status-select {
+    min-width: 130px;
+}
+
+td {
+    vertical-align: middle;
+}
