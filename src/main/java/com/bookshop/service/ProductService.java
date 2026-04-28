@@ -8,6 +8,7 @@ import com.bookshop.exception.ResourceNotFoundException;
 import com.bookshop.model.Product;
 import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.ProductRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class ProductService {
 
@@ -30,6 +32,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<ProductDto> findAll(Pageable pageable) {
+        log.debug("Fetching all products, pageable: {}", pageable);
         return productRepository.findAll(pageable).getContent().stream()
                 .map(productMapper::toDto)
                 .collect(Collectors.toList());
@@ -37,25 +40,36 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public ProductDto findById(Long id) {
+        log.debug("Fetching product by id: {}", id);
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> {
+                    log.info("Product not found with id: {}", id);
+                    return new ResourceNotFoundException("Product not found with id: " + id);
+                });
         return productMapper.toDto(product);
     }
 
     @Transactional
     public ProductDto create(ProductDto dto) {
+        log.info("Creating product, title: '{}', author: '{}'", dto.getTitle(), dto.getAuthor());
         if (productRepository.existsByTitleAndAuthor(dto.getTitle(), dto.getAuthor())) {
+            log.info("Product already exists, title: '{}', author: '{}'", dto.getTitle(), dto.getAuthor());
             throw new ResourceAlreadyExistsException(
                     "Product '" + dto.getTitle() + "' by '" + dto.getAuthor() + "' already exists");
         }
         Product saved = productRepository.save(productMapper.toEntity(dto));
+        log.info("Product created with id: {}", saved.getId());
         return productMapper.toDto(saved);
     }
 
     @Transactional
     public ProductDto update(Long id, ProductDto dto) {
+        log.info("Updating productId: {}", id);
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> {
+                    log.info("Product not found with id: {}", id);
+                    return new ResourceNotFoundException("Product not found with id: " + id);
+                });
 
         if (dto.getTitle() != null) product.setTitle(dto.getTitle());
         if (dto.getAuthor() != null) product.setAuthor(dto.getAuthor());
@@ -63,16 +77,24 @@ public class ProductService {
         if (dto.getDescription() != null) product.setDescription(dto.getDescription());
         if (dto.getQuantity() != null) product.setQuantity(dto.getQuantity());
 
-        return productMapper.toDto(productRepository.save(product));
+        Product saved = productRepository.save(product);
+        log.info("Product updated, productId: {}", saved.getId());
+        return productMapper.toDto(saved);
     }
 
     @Transactional
     public void delete(Long id) {
+        log.info("Deleting productId: {}", id);
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+                .orElseThrow(() -> {
+                    log.info("Product not found with id: {}", id);
+                    return new ResourceNotFoundException("Product not found with id: " + id);
+                });
         if (bookingRepository.existsByProductId(id)) {
+            log.info("Cannot delete productId: {} — existing bookings present", id);
             throw new InvalidOperationException("Cannot delete product with existing bookings");
         }
         productRepository.delete(product);
+        log.info("Product deleted, productId: {}", id);
     }
 }
