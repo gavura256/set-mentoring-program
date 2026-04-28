@@ -69,12 +69,7 @@ public class UserService {
         User user = userMapper.toEntity(dto);
         user.setName(SanitizerUtils.sanitize(user.getName()));
 
-        // Only ADMINISTRATOR can specify a role during creation
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = auth != null && auth.isAuthenticated() &&
-                auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRATOR"));
-
-        if (!isAdmin || user.getRole() == null) {
+        if (!isCurrentUserAdmin() || user.getRole() == null) {
             user.setRole(Role.CUSTOMER);
         }
 
@@ -98,12 +93,14 @@ public class UserService {
                     return new ResourceNotFoundException("User not found with id: " + id);
                 });
 
-        // Role update logic: ONLY ADMINISTRATOR can change a user's role
-        if (dto.getRole() != null && dto.getRole() != user.getRole()) {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            boolean isAdmin = auth != null && auth.isAuthenticated() &&
-                    auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRATOR"));
+        boolean isAdmin = isCurrentUserAdmin();
 
+        if (!isAdmin && user.getRole() == Role.ADMINISTRATOR) {
+            log.warn("Unauthorized update attempt on admin userId: {} by non-admin", id);
+            throw new AccessDeniedException("Managers cannot edit Administrator accounts");
+        }
+
+        if (dto.getRole() != null && dto.getRole() != user.getRole()) {
             if (!isAdmin) {
                 log.warn("Unauthorized role change attempt on userId: {} by non-admin", id);
                 throw new AccessDeniedException("Only an Administrator can change user roles");
@@ -144,5 +141,11 @@ public class UserService {
         }
         userRepository.deleteById(id);
         log.info("User deleted, userId: {}", id);
+    }
+
+    private boolean isCurrentUserAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.isAuthenticated() &&
+                auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRATOR"));
     }
 }
