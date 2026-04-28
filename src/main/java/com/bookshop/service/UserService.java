@@ -11,6 +11,7 @@ import com.bookshop.model.enums.Role;
 import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.UserRepository;
 import com.bookshop.util.SanitizerUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class UserService {
 
@@ -39,6 +41,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<UserResponse> findAll() {
+        log.debug("Fetching all users");
         return userRepository.findAll().stream()
                 .map(userMapper::toResponse)
                 .collect(Collectors.toList());
@@ -46,14 +49,20 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponse findById(Long id) {
+        log.debug("Fetching user by id: {}", id);
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> {
+                    log.info("User not found with id: {}", id);
+                    return new ResourceNotFoundException("User not found with id: " + id);
+                });
         return userMapper.toResponse(user);
     }
 
     @Transactional
     public UserResponse create(UserRequest dto) {
+        log.info("Creating user, email: '{}'", dto.getEmail());
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+            log.info("User already exists with email: '{}'", dto.getEmail());
             throw new ResourceAlreadyExistsException("An account with this email already exists");
         }
 
@@ -72,16 +81,22 @@ public class UserService {
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         } else {
+            log.info("Password missing for new user with email: '{}'", dto.getEmail());
             throw new InvalidOperationException("Password is required for user registration");
         }
         User saved = userRepository.save(user);
+        log.info("User created with id: {}, role: {}", saved.getId(), saved.getRole());
         return userMapper.toResponse(saved);
     }
 
     @Transactional
     public UserResponse update(Long id, UserRequest dto) {
+        log.info("Updating userId: {}", id);
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> {
+                    log.info("User not found with id: {}", id);
+                    return new ResourceNotFoundException("User not found with id: " + id);
+                });
 
         // Role update logic: ONLY ADMINISTRATOR can change a user's role
         if (dto.getRole() != null && dto.getRole() != user.getRole()) {
@@ -90,6 +105,7 @@ public class UserService {
                     auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRATOR"));
 
             if (!isAdmin) {
+                log.warn("Unauthorized role change attempt on userId: {} by non-admin", id);
                 throw new AccessDeniedException("Only an Administrator can change user roles");
             }
             user.setRole(dto.getRole());
@@ -97,6 +113,7 @@ public class UserService {
 
         if (!user.getEmail().equals(dto.getEmail())) {
             if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
+                log.info("Email already in use: '{}' when updating userId: {}", dto.getEmail(), id);
                 throw new ResourceAlreadyExistsException("An account with this email already exists");
             }
         }
@@ -108,19 +125,24 @@ public class UserService {
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
-        return userMapper.toResponse(userRepository.save(user));
+        User saved = userRepository.save(user);
+        log.info("User updated, userId: {}, role: {}", saved.getId(), saved.getRole());
+        return userMapper.toResponse(saved);
     }
 
     @Transactional
     public void delete(Long id) {
+        log.info("Deleting userId: {}", id);
         if (!userRepository.existsById(id)) {
+            log.info("User not found with id: {}", id);
             throw new ResourceNotFoundException("User not found with id: " + id);
         }
-        // Check if user has any bookings
         var bookings = bookingRepository.findByUserIdWithFetch(id);
         if (!bookings.isEmpty()) {
+            log.info("Cannot delete userId: {} — existing bookings present", id);
             throw new InvalidOperationException("Cannot delete user with existing bookings. Please delete all bookings for this user first.");
         }
         userRepository.deleteById(id);
+        log.info("User deleted, userId: {}", id);
     }
 }

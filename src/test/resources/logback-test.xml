@@ -9,6 +9,8 @@
 
     <appender name="ALLURE" class="com.bookshop.AllureLogAppender"/>
 
+    <logger name="com.bookshop" level="DEBUG"/>
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="ALLURE"/>
