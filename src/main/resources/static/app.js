@@ -276,14 +276,21 @@ async function loadProducts() {
                 <td>${p.quantity ?? 0}</td>
                 <td class="text-muted small text-truncate" style="max-width:200px">${escHtml(p.description || '')}</td>
                 <td>
-                    ${isManagerOrAdmin()
-                        ? `<button class="btn btn-outline-secondary btn-sm me-1"
-                               onclick='showProductModal(${JSON.stringify(p)})'>Edit</button>`
-                        : ''}
-                    ${isAdmin()
-                        ? `<button class="btn btn-outline-danger btn-sm"
-                               onclick="doDeleteProduct(${p.id})">Delete</button>`
-                        : ''}
+                    <div class="dropdown d-inline-block">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                            data-bs-toggle="dropdown">Actions</button>
+                        <ul class="dropdown-menu">
+                            <li><button type="button" class="dropdown-item"
+                                onclick='showBookingModal(${JSON.stringify(p)})'>Book the product</button></li>
+                            ${isManagerOrAdmin() ? `
+                            <li><hr class="dropdown-divider"></li>
+                            <li><button type="button" class="dropdown-item"
+                                onclick='showProductModal(${JSON.stringify(p)})'>Edit</button></li>` : ''}
+                            ${isAdmin() ? `
+                            <li><button type="button" class="dropdown-item text-danger"
+                                onclick="doDeleteProduct(${p.id})">Delete</button></li>` : ''}
+                        </ul>
+                    </div>
                 </td>
             </tr>`).join('');
         document.getElementById('products-body').innerHTML = `
@@ -405,11 +412,21 @@ async function renderBookings() {
 
 async function loadBookings() {
     try {
-        const path = isManagerOrAdmin()
+        const bookingsPath = isManagerOrAdmin()
             ? '/api/bookings?size=20'
             : `/api/bookings/user/${currentUserId()}`;
-        const bookings = await api(path);
+        const usersPath = isManagerOrAdmin()
+            ? '/api/users'
+            : `/api/users/${currentUserId()}`;
+
+        const [bookings, usersRaw] = await Promise.all([
+            api(bookingsPath),
+            api(usersPath).catch(() => null)
+        ]);
         const list = toList(bookings);
+        const usersList = isManagerOrAdmin() ? toList(usersRaw) : (usersRaw ? [usersRaw] : []);
+        const userMap = Object.fromEntries(usersList.map(u => [u.id, u.email]));
+
         const allStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
 
         const tbody = list.map(b => {
@@ -424,7 +441,7 @@ async function loadBookings() {
             return `
             <tr>
                 <td>${b.id}</td>
-                <td>${b.userId}</td>
+                <td class="small">${escHtml(userMap[b.userId] || String(b.userId))}</td>
                 <td>${b.productId}</td>
                 <td>${b.quantity}</td>
                 <td>${statusCell}</td>
@@ -445,7 +462,7 @@ async function loadBookings() {
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th><th>User</th><th>Product</th>
+                            <th>#</th><th>User Email</th><th>Product</th>
                             <th>Qty</th><th>Status</th><th>Date</th><th>Actions</th>
                         </tr>
                     </thead>
@@ -457,12 +474,29 @@ async function loadBookings() {
     }
 }
 
-async function showBookingModal() {
+function productPickerHtml(products, preselected) {
+    if (preselected) return `
+        <input type="hidden" id="bm-product" value="${preselected.id}">
+        <div class="form-control bg-light">
+            ${escHtml(preselected.title)} &mdash; $${Number(preselected.price).toFixed(2)}
+            <span class="text-muted">(${preselected.quantity} in stock)</span>
+        </div>`;
+    return `
+        <select id="bm-product" class="form-select" required>
+            <option value="">Select a product&hellip;</option>
+            ${products.map(p =>
+                `<option value="${p.id}">${escHtml(p.title)} &mdash; $${Number(p.price).toFixed(2)} (${p.quantity} in stock)</option>`
+            ).join('')}
+        </select>`;
+}
+
+async function showBookingModal(preselected = null) {
     let products = [];
-    try {
-        const resp = await api('/api/products?size=100');
-        products = toList(resp);
-    } catch { /* proceed with empty list */ }
+    if (!preselected) {
+        try {
+            products = toList(await api('/api/products?size=100'));
+        } catch { /* proceed with empty list */ }
+    }
 
     document.getElementById('modal-container').innerHTML = `
     <div class="modal fade" id="bookingModal" tabindex="-1">
@@ -477,12 +511,7 @@ async function showBookingModal() {
                     <form onsubmit="doCreateBooking(event)">
                         <div class="mb-3">
                             <label class="form-label">Product *</label>
-                            <select id="bm-product" class="form-select" required>
-                                <option value="">Select a product&hellip;</option>
-                                ${products.map(p =>
-                                    `<option value="${p.id}">${escHtml(p.title)} &mdash; $${Number(p.price).toFixed(2)} (${p.quantity} in stock)</option>`
-                                ).join('')}
-                            </select>
+                            ${productPickerHtml(products, preselected)}
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Quantity *</label>
