@@ -30,6 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -155,7 +156,7 @@ class BookingServiceTest {
     @Test
     void create_validDto_setsStatusPendingAndSaves() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+        when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
         when(bookingMapper.toEntity(bookingDto, user, product)).thenReturn(booking);
         when(bookingRepository.save(booking)).thenReturn(booking);
         when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
@@ -165,6 +166,36 @@ class BookingServiceTest {
         assertThat(result).isNotNull();
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.PENDING);
         verify(bookingRepository).save(booking);
+    }
+
+    @Test
+    void create_validDto_decrementsProductStock() {
+        product.setQuantity(10);
+        bookingDto.setQuantity(3);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
+        when(bookingMapper.toEntity(bookingDto, user, product)).thenReturn(booking);
+        when(bookingRepository.save(booking)).thenReturn(booking);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
+
+        bookingService.create(bookingDto);
+
+        assertThat(product.getQuantity()).isEqualTo(7);
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    void create_insufficientStock_doesNotDecrementStock() {
+        product.setQuantity(1);
+        bookingDto.setQuantity(5);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
+
+        assertThatThrownBy(() -> bookingService.create(bookingDto))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Insufficient stock");
+
+        verify(productRepository, never()).save(any());
     }
 
     @Test
@@ -181,7 +212,7 @@ class BookingServiceTest {
     void create_nonExistingProduct_throwsNotFoundException() {
         bookingDto.setProductId(99L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(productRepository.findById(99L)).thenReturn(Optional.empty());
+        when(productRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.create(bookingDto))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -189,20 +220,97 @@ class BookingServiceTest {
     }
 
     @Test
-    void updateStatus_pendingBooking_updatesStatus() {
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+    void updateStatus_pendingToApproved_doesNotChangeStock() {
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
         when(bookingRepository.save(booking)).thenReturn(booking);
         when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
 
         bookingService.updateStatus(1L, BookingStatus.APPROVED);
 
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.APPROVED);
-        verify(bookingRepository).save(booking);
+        verify(productRepository, never()).save(any());
+    }
+
+    @Test
+    void updateStatus_cancelledBooking_restoresProductStock() {
+        product.setQuantity(7);
+        booking.setQuantity(3);
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
+        when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
+        when(bookingRepository.save(booking)).thenReturn(booking);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
+
+        bookingService.updateStatus(1L, BookingStatus.CANCELLED);
+
+        assertThat(product.getQuantity()).isEqualTo(10);
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    void updateStatus_rejectedBooking_restoresProductStock() {
+        product.setQuantity(7);
+        booking.setQuantity(3);
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
+        when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
+        when(bookingRepository.save(booking)).thenReturn(booking);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
+
+        bookingService.updateStatus(1L, BookingStatus.REJECTED);
+
+        assertThat(product.getQuantity()).isEqualTo(10);
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.REJECTED);
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    void updateStatus_approvedThenCancelled_restoresStock() {
+        booking.setStatus(BookingStatus.APPROVED);
+        product.setQuantity(7);
+        booking.setQuantity(3);
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
+        when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
+        when(bookingRepository.save(booking)).thenReturn(booking);
+        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
+
+        bookingService.updateStatus(1L, BookingStatus.CANCELLED);
+
+        assertThat(product.getQuantity()).isEqualTo(10);
+        verify(productRepository).save(product);
+    }
+
+    @Test
+    void updateStatus_invalidTransition_cancelledToApproved_throws() {
+        booking.setStatus(BookingStatus.CANCELLED);
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.updateStatus(1L, BookingStatus.APPROVED))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Invalid status transition");
+    }
+
+    @Test
+    void updateStatus_invalidTransition_rejectedToPending_throws() {
+        booking.setStatus(BookingStatus.REJECTED);
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.updateStatus(1L, BookingStatus.PENDING))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Invalid status transition");
+    }
+
+    @Test
+    void updateStatus_sameStatus_pendingToPending_throws() {
+        booking.setStatus(BookingStatus.PENDING);
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.updateStatus(1L, BookingStatus.PENDING))
+                .isInstanceOf(InvalidOperationException.class)
+                .hasMessageContaining("Invalid status transition");
     }
 
     @Test
     void updateStatus_nonExistingId_throwsNotFoundException() {
-        when(bookingRepository.findById(99L)).thenReturn(Optional.empty());
+        when(bookingRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.updateStatus(99L, BookingStatus.APPROVED))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -210,24 +318,42 @@ class BookingServiceTest {
     }
 
     @Test
-    void updateStatus_cancelPendingBooking_setsStatusCancelled() {
+    void delete_pendingBooking_restoresStock() {
+        product.setQuantity(7);
+        booking.setQuantity(3);
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(bookingRepository.save(booking)).thenReturn(booking);
-        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
+        when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
 
-        bookingService.updateStatus(1L, BookingStatus.CANCELLED);
+        bookingService.delete(1L);
 
-        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELLED);
+        assertThat(product.getQuantity()).isEqualTo(10);
+        verify(productRepository).save(product);
+        verify(bookingRepository).delete(booking);
     }
 
-    // BookingService.delete() resolves the entity via findById first, then calls
-    // delete(entity) — not existsById + deleteById.
     @Test
-    void delete_existingId_deletesBooking() {
+    void delete_approvedBooking_restoresStock() {
+        booking.setStatus(BookingStatus.APPROVED);
+        product.setQuantity(7);
+        booking.setQuantity(3);
+        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+        when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
+
+        bookingService.delete(1L);
+
+        assertThat(product.getQuantity()).isEqualTo(10);
+        verify(productRepository).save(product);
+        verify(bookingRepository).delete(booking);
+    }
+
+    @Test
+    void delete_cancelledBooking_doesNotRestoreStock() {
+        booking.setStatus(BookingStatus.CANCELLED);
         when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
 
         bookingService.delete(1L);
 
+        verify(productRepository, never()).save(any());
         verify(bookingRepository).delete(booking);
     }
 
@@ -238,43 +364,6 @@ class BookingServiceTest {
         assertThatThrownBy(() -> bookingService.delete(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
-    }
-
-    @Test
-    void create_insufficientStock_throwsInvalidOperationException() {
-        product.setQuantity(1);
-        bookingDto.setQuantity(5);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-
-        assertThatThrownBy(() -> bookingService.create(bookingDto))
-                .isInstanceOf(InvalidOperationException.class)
-                .hasMessageContaining("Insufficient stock");
-    }
-
-    @Test
-    void updateStatus_approvedWithInsufficientStock_throwsInvalidOperationException() {
-        product.setQuantity(0);
-        booking.setQuantity(2);
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-
-        assertThatThrownBy(() -> bookingService.updateStatus(1L, BookingStatus.APPROVED))
-                .isInstanceOf(InvalidOperationException.class)
-                .hasMessageContaining("Insufficient stock");
-    }
-
-    @Test
-    void updateStatus_approvedBooking_decrementsProductQuantity() {
-        product.setQuantity(10);
-        booking.setQuantity(3);
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
-        when(bookingRepository.save(booking)).thenReturn(booking);
-        when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
-
-        bookingService.updateStatus(1L, BookingStatus.APPROVED);
-
-        assertThat(product.getQuantity()).isEqualTo(7);
-        verify(productRepository).save(product);
     }
 
     @Test

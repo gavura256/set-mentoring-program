@@ -85,6 +85,17 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                 ));
     }
 
+    private Long createBookingAndGetId(int quantity) throws Exception {
+        BookingDto dto = BookingDto.builder().userId(userId).productId(productId).quantity(quantity).build();
+        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(asCustomer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return jsonUtils.fromJson(resp, BookingDto.class).getId();
+    }
+
     private RequestPostProcessor asManager() {
         return user(
                 new CustomUserDetails(
@@ -120,12 +131,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void getById_existingBooking_returnsOk() throws Exception {
-        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(asCustomer())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(buildBookingDto())))
-                .andReturn().getResponse().getContentAsString();
-        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
+        Long id = createBookingAndGetId(1);
 
         mockMvc.perform(get(ApiRoutes.BOOKINGS + "/{id}", id))
                 .andExpect(status().isOk())
@@ -142,12 +148,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void updateStatus_pendingBooking_approvesSuccessfully() throws Exception {
-        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(asCustomer())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(buildBookingDto())))
-                .andReturn().getResponse().getContentAsString();
-        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
+        Long id = createBookingAndGetId(1);
 
         UpdateStatusRequest statusRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
@@ -172,12 +173,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void cancel_managerRole_returnsCancelledStatus() throws Exception {
-        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(asCustomer())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(buildBookingDto())))
-                .andReturn().getResponse().getContentAsString();
-        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
+        Long id = createBookingAndGetId(1);
 
         UpdateStatusRequest statusRequest = UpdateStatusRequest.builder().status(BookingStatus.CANCELLED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
@@ -193,12 +189,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void cancel_pendingBooking_returnsCancelledStatus() throws Exception {
-        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(asCustomer())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(buildBookingDto())))
-                .andReturn().getResponse().getContentAsString();
-        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
+        Long id = createBookingAndGetId(1);
 
         UpdateStatusRequest statusRequest = UpdateStatusRequest.builder().status(BookingStatus.CANCELLED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
@@ -211,12 +202,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void delete_existingBooking_returnsNoContent() throws Exception {
-        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .with(asCustomer())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(buildBookingDto())))
-                .andReturn().getResponse().getContentAsString();
-        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
+        Long id = createBookingAndGetId(1);
 
         mockMvc.perform(delete(ApiRoutes.BOOKINGS + "/{id}", id))
                 .andExpect(status().isNoContent());
@@ -326,7 +312,8 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    void updateStatus_approveWithInsufficientStock_returnsConflict() throws Exception {
+    void create_secondBookingExceedsRemainingStock_returnsConflict() throws Exception {
+        // Stock is now reserved at creation (PENDING), so the second booking fails at create time
         ProductDto limitedProduct = ProductDto.builder()
                 .title("Limited Book")
                 .author("Author")
@@ -341,30 +328,18 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
         Long limitedProductId = jsonUtils.fromJson(prodResp, ProductDto.class).getId();
 
         BookingDto dtoA = BookingDto.builder().userId(userId).productId(limitedProductId).quantity(3).build();
-        String respA = mockMvc.perform(post(ApiRoutes.BOOKINGS)
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dtoA)))
-                .andReturn().getResponse().getContentAsString();
-        Long bookingAId = jsonUtils.fromJson(respA, BookingDto.class).getId();
+                .andExpect(status().isCreated());
 
+        // Remaining stock is now 2; booking qty 3 must fail at creation
         BookingDto dtoB = BookingDto.builder().userId(userId).productId(limitedProductId).quantity(3).build();
-        String respB = mockMvc.perform(post(ApiRoutes.BOOKINGS)
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dtoB)))
-                .andReturn().getResponse().getContentAsString();
-        Long bookingBId = jsonUtils.fromJson(respB, BookingDto.class).getId();
-
-        UpdateStatusRequest approveRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
-        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", bookingAId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(approveRequest)))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", bookingBId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(approveRequest)))
                 .andExpect(status().isConflict());
     }
 
@@ -432,14 +407,74 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @WithMockUser(roles = "MANAGER")
-    void approve_decrementsStockCorrectly() throws Exception {
-        BookingDto dto = BookingDto.builder().userId(userId).productId(productId).quantity(3).build();
-        String resp = mockMvc.perform(post(ApiRoutes.BOOKINGS)
+    void create_pendingBooking_decrementsStockImmediately() throws Exception {
+        BookingDto dto = BookingDto.builder().userId(userId).productId(productId).quantity(5).build();
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .with(asCustomer())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonUtils.toJson(dto)))
-                .andReturn().getResponse().getContentAsString();
-        Long id = jsonUtils.fromJson(resp, BookingDto.class).getId();
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId)
+                        .with(user("manager").roles("MANAGER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantity").value(45));
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void create_failedBooking_doesNotDecrementStock() throws Exception {
+        BookingDto dto = BookingDto.builder().userId(userId).productId(productId).quantity(999).build();
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .with(asCustomer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId)
+                        .with(user("manager").roles("MANAGER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantity").value(50));
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void cancel_pendingBooking_restoresStock() throws Exception {
+        Long id = createBookingAndGetId(5);
+
+        UpdateStatusRequest cancelRequest = UpdateStatusRequest.builder().status(BookingStatus.CANCELLED).build();
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(cancelRequest)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId)
+                        .with(user("manager").roles("MANAGER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantity").value(50));
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void reject_pendingBooking_restoresStock() throws Exception {
+        Long id = createBookingAndGetId(5);
+
+        UpdateStatusRequest rejectRequest = UpdateStatusRequest.builder().status(BookingStatus.REJECTED).build();
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(rejectRequest)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId)
+                        .with(user("manager").roles("MANAGER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantity").value(50));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void delete_approvedBooking_restoresStock() throws Exception {
+        Long id = createBookingAndGetId(5);
 
         UpdateStatusRequest approveRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
@@ -447,8 +482,54 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(jsonUtils.toJson(approveRequest)))
                 .andExpect(status().isOk());
 
-        // product stock should now be 47 (50 - 3)
-        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId))
+        mockMvc.perform(delete(ApiRoutes.BOOKINGS + "/{id}", id))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId)
+                        .with(user("manager").roles("MANAGER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantity").value(50));
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void updateStatus_invalidTransition_returnsBadRequest() throws Exception {
+        Long id = createBookingAndGetId(1);
+
+        UpdateStatusRequest cancelRequest = UpdateStatusRequest.builder().status(BookingStatus.CANCELLED).build();
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(cancelRequest)))
+                .andExpect(status().isOk());
+
+        // CANCELLED → APPROVED is an invalid transition
+        UpdateStatusRequest approveRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(approveRequest)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
+    void approve_stockUnchangedAfterApprove() throws Exception {
+        // Stock is reserved at create (PENDING); APPROVE must not change it again
+        Long id = createBookingAndGetId(3);
+
+        // After create: stock = 47
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId)
+                        .with(user("manager").roles("MANAGER")))
+                .andExpect(jsonPath("$.quantity").value(47));
+
+        UpdateStatusRequest approveRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
+        mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(approveRequest)))
+                .andExpect(status().isOk());
+
+        // After approve: stock must still be 47
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId)
+                        .with(user("manager").roles("MANAGER")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.quantity").value(47));
     }
