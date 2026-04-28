@@ -159,15 +159,10 @@ async function doLogin(e) {
     btn.disabled = true;
     btn.textContent = 'Logging in\u2026';
     try {
-        const data = await api('/api/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({
-                email: document.getElementById('l-email').value.trim(),
-                password: document.getElementById('l-password').value
-            })
-        });
-        setSession(data);
-        navigate('#/products');
+        await loginWith(
+            document.getElementById('l-email').value.trim(),
+            document.getElementById('l-password').value
+        );
     } catch (err) {
         showAlert('login-alert', err.message);
         btn.disabled = false;
@@ -209,20 +204,31 @@ async function doRegister(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type=submit]');
     btn.disabled = true;
+    const email = document.getElementById('r-email').value.trim();
+    const password = document.getElementById('r-password').value;
     try {
         await api('/api/auth/register', {
             method: 'POST',
             body: JSON.stringify({
                 name: document.getElementById('r-name').value.trim(),
-                email: document.getElementById('r-email').value.trim(),
-                password: document.getElementById('r-password').value
+                email,
+                password
             })
         });
-        navigate('#/login');
+        await loginWith(email, password);
     } catch (err) {
         showAlert('reg-alert', err.message);
         btn.disabled = false;
     }
+}
+
+async function loginWith(email, password) {
+    const session = await api('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+    });
+    setSession(session);
+    navigate('#/products');
 }
 
 function doLogout() {
