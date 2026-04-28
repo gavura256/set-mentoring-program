@@ -16,3 +16,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+
+logging:
+  file:
+    name: app.log
