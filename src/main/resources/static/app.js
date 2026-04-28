@@ -191,6 +191,10 @@ function renderRegister() {
                         <input id="r-password" type="password" class="form-control" required>
                         <div class="form-text">Min 8 characters, at least 1 uppercase, 1 lowercase, 1 digit.</div>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <input id="r-confirm" type="password" class="form-control" required>
+                    </div>
                     <button class="btn btn-success w-100" type="submit">Register</button>
                 </form>
                 <hr>
@@ -206,6 +210,11 @@ async function doRegister(e) {
     btn.disabled = true;
     const email = document.getElementById('r-email').value.trim();
     const password = document.getElementById('r-password').value;
+    if (password !== document.getElementById('r-confirm').value) {
+        showAlert('reg-alert', 'Passwords do not match.');
+        btn.disabled = false;
+        return;
+    }
     try {
         await api('/api/auth/register', {
             method: 'POST',
