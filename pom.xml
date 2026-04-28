@@ -198,12 +198,24 @@
                             <groupId>org.springframework.boot</groupId>
                             <artifactId>spring-boot-devtools</artifactId>
                         </exclude>
-                        <exclude>
-                            <groupId>com.h2database</groupId>
-                            <artifactId>h2</artifactId>
-                        </exclude>
                     </excludes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>
+                                    <groupId>com.h2database</groupId>
+                                    <artifactId>h2</artifactId>
+                                </exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
