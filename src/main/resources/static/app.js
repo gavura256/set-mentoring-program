@@ -427,6 +427,14 @@ async function loadBookings() {
         const usersList = isManagerOrAdmin() ? toList(usersRaw) : (usersRaw ? [usersRaw] : []);
         const userMap = Object.fromEntries(usersList.map(u => [u.id, u.email]));
 
+        const uniqueProductIds = [...new Set(list.map(b => b.productId))];
+        const fetchedProducts = await Promise.all(
+            uniqueProductIds.map(id => api(`/api/products/${id}`).catch(() => null))
+        );
+        const productMap = Object.fromEntries(
+            fetchedProducts.filter(Boolean).map(p => [p.id, p])
+        );
+
         const allStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
 
         const tbody = list.map(b => {
@@ -438,11 +446,13 @@ async function loadBookings() {
                        ).join('')}
                    </select>`
                 : statusBadge(b.status);
+            const prod = productMap[b.productId];
+            const productLabel = prod ? `${prod.title} / ${prod.author}` : String(b.productId);
             return `
             <tr>
                 <td>${b.id}</td>
                 <td class="small">${escHtml(userMap[b.userId] || String(b.userId))}</td>
-                <td>${b.productId}</td>
+                <td class="small">${escHtml(productLabel)}</td>
                 <td>${b.quantity}</td>
                 <td>${statusCell}</td>
                 <td class="text-muted small">
@@ -462,7 +472,7 @@ async function loadBookings() {
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th><th>User Email</th><th>Product</th>
+                            <th>#</th><th>User Email</th><th>Product (Author)</th>
                             <th>Qty</th><th>Status</th><th>Date</th><th>Actions</th>
                         </tr>
                     </thead>

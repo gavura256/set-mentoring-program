@@ -235,6 +235,57 @@ class UserServiceTest {
 
     @Test
     @WithMockUser(roles = "MANAGER")
+    void update_adminTargetByManager_throwsAccessDeniedException() {
+        User adminUser = User.builder()
+                .id(2L)
+                .email("admin@example.com")
+                .name("Admin")
+                .role(Role.ADMINISTRATOR)
+                .build();
+        UserRequest updateRequest = UserRequest.builder()
+                .name("Hacked")
+                .email("admin@example.com")
+                .build();
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(adminUser));
+
+        assertThatThrownBy(() -> userService.update(2L, updateRequest))
+                .isInstanceOf(AccessDeniedException.class)
+                .hasMessageContaining("Managers cannot edit Administrator accounts");
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMINISTRATOR")
+    void update_adminTargetByAdmin_succeeds() {
+        User adminUser = User.builder()
+                .id(2L)
+                .email("admin@example.com")
+                .name("Admin")
+                .role(Role.ADMINISTRATOR)
+                .build();
+        UserRequest updateRequest = UserRequest.builder()
+                .name("Updated Admin")
+                .email("admin@example.com")
+                .role(Role.ADMINISTRATOR)
+                .build();
+        UserResponse adminResponse = UserResponse.builder()
+                .id(2L)
+                .email("admin@example.com")
+                .name("Updated Admin")
+                .role(Role.ADMINISTRATOR)
+                .build();
+
+        when(userRepository.findById(2L)).thenReturn(Optional.of(adminUser));
+        when(userRepository.save(adminUser)).thenReturn(adminUser);
+        when(userMapper.toResponse(adminUser)).thenReturn(adminResponse);
+
+        UserResponse result = userService.update(2L, updateRequest);
+
+        assertThat(result.getName()).isEqualTo("Updated Admin");
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
     void update_roleChangeByNonAdmin_throwsAccessDeniedException() {
         UserRequest updateRequest = UserRequest.builder()
                 .name("John Doe")
