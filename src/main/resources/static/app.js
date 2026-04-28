@@ -299,7 +299,7 @@ async function loadProducts() {
                     <thead class="table-light">
                         <tr>
                             <th>#</th><th>Title</th><th>Author</th>
-                            <th>Price</th><th>Qty</th><th>Description</th><th>Actions</th>
+                            <th>Price</th><th>Available</th><th>Description</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>${tbody || '<tr><td colspan="7" class="text-center text-muted py-4">No products found</td></tr>'}</tbody>

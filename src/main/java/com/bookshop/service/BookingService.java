@@ -77,7 +77,7 @@ public class BookingService {
                     log.info("User not found with id: {}", dto.getUserId());
                     return new ResourceNotFoundException("User not found with id: " + dto.getUserId());
                 });
-        Product product = productRepository.findById(dto.getProductId())
+        Product product = productRepository.findByIdForUpdate(dto.getProductId())
                 .orElseThrow(() -> {
                     log.info("Product not found with id: {}", dto.getProductId());
                     return new ResourceNotFoundException("Product not found with id: " + dto.getProductId());
@@ -94,28 +94,35 @@ public class BookingService {
         Booking saved = bookingRepository.save(booking);
         log.info("Booking created with id: {} for userId: {}, productId: {}",
                 saved.getId(), saved.getUser().getId(), saved.getProduct().getId());
+
+        product.setQuantity(product.getQuantity() - dto.getQuantity());
+        productRepository.save(product);
+        log.info("Stock reserved for productId: {}, new quantity: {}", product.getId(), product.getQuantity());
+
         return bookingMapper.toDto(saved);
     }
 
     @Transactional
     public BookingDto updateStatus(Long id, BookingStatus status) {
         log.info("Updating status of bookingId: {} to: {}", id, status);
-        Booking booking = bookingRepository.findById(id)
+        Booking booking = bookingRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> {
                     log.info("Booking not found with id: {}", id);
                     return new ResourceNotFoundException("Booking not found with id: " + id);
                 });
 
-        if (status == BookingStatus.APPROVED) {
-            Product product = booking.getProduct();
-            if (product.getQuantity() < booking.getQuantity()) {
-                log.info("Insufficient stock to approve bookingId: {}, available: {}, required: {}",
-                        id, product.getQuantity(), booking.getQuantity());
-                throw new InvalidOperationException("Insufficient stock to approve booking");
-            }
-            product.setQuantity(product.getQuantity() - booking.getQuantity());
-            productRepository.save(product);
-            log.info("Stock decremented for productId: {}, new quantity: {}", product.getId(), product.getQuantity());
+        BookingStatus current = booking.getStatus();
+        boolean validTransition =
+                (current == BookingStatus.PENDING && (status == BookingStatus.APPROVED ||
+                        status == BookingStatus.REJECTED || status == BookingStatus.CANCELLED)) ||
+                (current == BookingStatus.APPROVED && status == BookingStatus.CANCELLED);
+        if (!validTransition) {
+            log.warn("Invalid status transition for bookingId: {}: {} → {}", id, current, status);
+            throw new InvalidOperationException("Invalid status transition: " + current + " → " + status);
+        }
+
+        if (status == BookingStatus.CANCELLED || status == BookingStatus.REJECTED) {
+            releaseStock(booking);
         }
 
         booking.setStatus(status);
@@ -132,8 +139,20 @@ public class BookingService {
                     log.info("Booking not found with id: {}", id);
                     return new ResourceNotFoundException("Booking not found with id: " + id);
                 });
+        if (booking.getStatus() == BookingStatus.PENDING || booking.getStatus() == BookingStatus.APPROVED) {
+            releaseStock(booking);
+        }
         bookingRepository.delete(booking);
         log.info("Booking deleted, bookingId: {}", id);
+    }
+
+    private void releaseStock(Booking booking) {
+        Product product = productRepository.findByIdForUpdate(booking.getProduct().getId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Product not found with id: " + booking.getProduct().getId()));
+        product.setQuantity(product.getQuantity() + booking.getQuantity());
+        productRepository.save(product);
+        log.info("Stock released for productId: {}, new quantity: {}", product.getId(), product.getQuantity());
     }
 
     @Transactional(readOnly = true)
