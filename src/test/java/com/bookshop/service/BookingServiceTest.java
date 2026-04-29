@@ -321,7 +321,7 @@ class BookingServiceTest {
     void delete_pendingBooking_restoresStock() {
         product.setQuantity(7);
         booking.setQuantity(3);
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
         when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
 
         bookingService.delete(1L);
@@ -336,7 +336,7 @@ class BookingServiceTest {
         booking.setStatus(BookingStatus.APPROVED);
         product.setQuantity(7);
         booking.setQuantity(3);
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
         when(productRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(product));
 
         bookingService.delete(1L);
@@ -349,7 +349,7 @@ class BookingServiceTest {
     @Test
     void delete_cancelledBooking_doesNotRestoreStock() {
         booking.setStatus(BookingStatus.CANCELLED);
-        when(bookingRepository.findById(1L)).thenReturn(Optional.of(booking));
+        when(bookingRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(booking));
 
         bookingService.delete(1L);
 
@@ -359,7 +359,7 @@ class BookingServiceTest {
 
     @Test
     void delete_nonExistingId_throwsNotFoundException() {
-        when(bookingRepository.findById(99L)).thenReturn(Optional.empty());
+        when(bookingRepository.findByIdForUpdate(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> bookingService.delete(99L))
                 .isInstanceOf(ResourceNotFoundException.class)

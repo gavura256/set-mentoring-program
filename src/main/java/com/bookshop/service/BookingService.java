@@ -134,7 +134,7 @@ public class BookingService {
     @Transactional
     public void delete(Long id) {
         log.info("Deleting bookingId: {}", id);
-        Booking booking = bookingRepository.findById(id)
+        Booking booking = bookingRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> {
                     log.info("Booking not found with id: {}", id);
                     return new ResourceNotFoundException("Booking not found with id: " + id);

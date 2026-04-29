@@ -313,7 +313,6 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void create_secondBookingExceedsRemainingStock_returnsConflict() throws Exception {
-        // Stock is now reserved at creation (PENDING), so the second booking fails at create time
         ProductDto limitedProduct = ProductDto.builder()
                 .title("Limited Book")
                 .author("Author")
@@ -334,7 +333,6 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(jsonUtils.toJson(dtoA)))
                 .andExpect(status().isCreated());
 
-        // Remaining stock is now 2; booking qty 3 must fail at creation
         BookingDto dtoB = BookingDto.builder().userId(userId).productId(limitedProductId).quantity(3).build();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
                         .with(asCustomer())
@@ -372,8 +370,6 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void create_statusInRequest_ignoredAndForcedToPending() throws Exception {
-        // Clients must not be able to set the initial status — it must always be PENDING.
-        // BookingDto.status is READ_ONLY so Jackson serializes it; server ignores it on input.
         BookingDto dto = BookingDto.builder()
                 .userId(userId)
                 .productId(productId)
@@ -391,11 +387,10 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void create_exactStockQuantity_succeeds() throws Exception {
-        // Booking exactly the available stock (boundary) must succeed
         BookingDto dto = BookingDto.builder()
                 .userId(userId)
                 .productId(productId)
-                .quantity(50) // product was created with 50 in stock
+                .quantity(50)
                 .build();
 
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
@@ -502,7 +497,6 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(jsonUtils.toJson(cancelRequest)))
                 .andExpect(status().isOk());
 
-        // CANCELLED → APPROVED is an invalid transition
         UpdateStatusRequest approveRequest = UpdateStatusRequest.builder().status(BookingStatus.APPROVED).build();
         mockMvc.perform(patch(ApiRoutes.BOOKINGS + "/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -513,10 +507,8 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     @Test
     @WithMockUser(roles = "MANAGER")
     void approve_stockUnchangedAfterApprove() throws Exception {
-        // Stock is reserved at create (PENDING); APPROVE must not change it again
         Long id = createBookingAndGetId(3);
 
-        // After create: stock = 47
         mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId)
                         .with(user("manager").roles("MANAGER")))
                 .andExpect(jsonPath("$.quantity").value(47));
@@ -527,7 +519,6 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
                         .content(jsonUtils.toJson(approveRequest)))
                 .andExpect(status().isOk());
 
-        // After approve: stock must still be 47
         mockMvc.perform(get(ApiRoutes.PRODUCTS + "/{id}", productId)
                         .with(user("manager").roles("MANAGER")))
                 .andExpect(status().isOk())
