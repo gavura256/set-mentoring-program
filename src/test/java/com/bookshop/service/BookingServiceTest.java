@@ -30,6 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -98,19 +99,19 @@ class BookingServiceTest {
         when(bookingRepository.findAllWithFetch(any(Pageable.class))).thenReturn(page);
         when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
 
-        List<BookingDto> result = bookingService.findAll(Pageable.unpaged());
+        Page<BookingDto> result = bookingService.findAll(Pageable.unpaged());
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().getStatus()).isEqualTo(BookingStatus.PENDING);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().getFirst().getStatus()).isEqualTo(BookingStatus.PENDING);
     }
 
     @Test
     void findAll_returnsEmptyListWhenNoBookings() {
         when(bookingRepository.findAllWithFetch(any(Pageable.class))).thenReturn(Page.empty());
 
-        List<BookingDto> result = bookingService.findAll(Pageable.unpaged());
+        Page<BookingDto> result = bookingService.findAll(Pageable.unpaged());
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test
@@ -136,19 +137,20 @@ class BookingServiceTest {
     @Test
     void findByUserId_existingUser_returnsBookings() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(bookingRepository.findByUserIdWithFetch(1L)).thenReturn(List.of(booking));
+        when(bookingRepository.findByUserIdWithFetch(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(booking)));
         when(bookingMapper.toDto(booking)).thenReturn(bookingDto);
 
-        List<BookingDto> result = bookingService.findByUserId(1L);
+        Page<BookingDto> result = bookingService.findByUserId(1L, Pageable.unpaged());
 
-        assertThat(result).hasSize(1);
+        assertThat(result.getContent()).hasSize(1);
     }
 
     @Test
     void findByUserId_nonExistingUser_throwsNotFoundException() {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> bookingService.findByUserId(99L))
+        assertThatThrownBy(() -> bookingService.findByUserId(99L, Pageable.unpaged()))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("99");
     }

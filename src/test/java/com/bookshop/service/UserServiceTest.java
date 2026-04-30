@@ -20,9 +20,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
+import static org.mockito.ArgumentMatchers.any;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -81,22 +87,22 @@ class UserServiceTest {
 
     @Test
     void findAll_returnsAllUsers() {
-        when(userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(user)));
         when(userMapper.toResponse(user)).thenReturn(userResponse);
 
-        List<UserResponse> result = userService.findAll();
+        Page<UserResponse> result = userService.findAll(Pageable.unpaged());
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().getEmail()).isEqualTo("john@example.com");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().getFirst().getEmail()).isEqualTo("john@example.com");
     }
 
     @Test
     void findAll_returnsEmptyListWhenNoUsers() {
-        when(userRepository.findAll()).thenReturn(Collections.emptyList());
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
 
-        List<UserResponse> result = userService.findAll();
+        Page<UserResponse> result = userService.findAll(Pageable.unpaged());
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test

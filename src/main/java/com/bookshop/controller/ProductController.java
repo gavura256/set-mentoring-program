@@ -22,9 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bookshop.dto.validation.OnCreate;
 import jakarta.validation.Valid;
 import jakarta.validation.groups.Default;
+import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import java.util.List;
 
 @RestController
 @RequestMapping(ApiRoutes.PRODUCTS)
@@ -36,7 +36,7 @@ public class ProductController {
 
     @GetMapping
     @Operation(summary = "Get all products")
-    public List<ProductDto> getAll(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
+    public Page<ProductDto> getAll(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return productService.findAll(pageable);
     }
 

@@ -10,12 +10,10 @@ import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -31,11 +29,9 @@ public class ProductService {
     private BookingRepository bookingRepository;
 
     @Transactional(readOnly = true)
-    public List<ProductDto> findAll(Pageable pageable) {
+    public Page<ProductDto> findAll(Pageable pageable) {
         log.debug("Fetching all products, pageable: {}", pageable);
-        return productRepository.findAll(pageable).getContent().stream()
-                .map(productMapper::toDto)
-                .collect(Collectors.toList());
+        return productRepository.findAll(pageable).map(productMapper::toDto);
     }
 
     @Transactional(readOnly = true)

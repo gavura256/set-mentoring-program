@@ -53,7 +53,7 @@ class UserControllerIntegrationTest extends AbstractIntegrationTest {
     void getAll_returnsOkWithList() throws Exception {
         mockMvc.perform(get(ApiRoutes.USERS))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test

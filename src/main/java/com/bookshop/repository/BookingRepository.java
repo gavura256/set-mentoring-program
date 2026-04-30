@@ -26,5 +26,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b JOIN FETCH b.user JOIN FETCH b.product WHERE b.user.id = :userId")
     List<Booking> findByUserIdWithFetch(@Param("userId") Long userId);
 
+    @Query(value = "SELECT b FROM Booking b JOIN FETCH b.user JOIN FETCH b.product WHERE b.user.id = :userId",
+           countQuery = "SELECT COUNT(b) FROM Booking b WHERE b.user.id = :userId")
+    Page<Booking> findByUserIdWithFetch(@Param("userId") Long userId, Pageable pageable);
+
     boolean existsByProductId(Long productId);
 }
