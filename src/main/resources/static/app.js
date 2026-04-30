@@ -119,7 +119,7 @@ function navbar() {
                     </li>` : ''}
                 </ul>
                 <span class="text-light small border-start ps-3">
-                    User&nbsp;#${sess.userId}&nbsp;${roleBadge(sess.role)}
+                    ${escHtml(sess.name ?? 'User #' + sess.userId)}&nbsp;${roleBadge(sess.role)}
                 </span>
                 <button class="btn btn-outline-light btn-sm" onclick="doLogout()">Logout</button>
             </div>
@@ -263,11 +263,47 @@ async function renderProducts() {
     await loadProducts();
 }
 
+let _productsCache = [];
+let _productsSort = { col: null, dir: 'asc' };
+const _numericCols = new Set(['id', 'price', 'quantity']);
+
+function sortIcon(c) {
+    if (_productsSort.col !== c) return '';
+    return _productsSort.dir === 'asc'
+        ? '<span class="ms-1" style="font-size:.75em">↑</span>'
+        : '<span class="ms-1" style="font-size:.75em">↓</span>';
+}
+
 async function loadProducts() {
     try {
         const products = await api('/api/products?size=20');
-        const list = toList(products);
-        const tbody = list.map(p => `
+        _productsCache = toList(products);
+        renderProductsTable();
+    } catch (err) {
+        showAlert('products-alert', err.message);
+    }
+}
+
+function sortProducts(col) {
+    if (_productsSort.col === col) {
+        _productsSort.dir = _productsSort.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+        _productsSort = { col, dir: 'asc' };
+    }
+    renderProductsTable();
+}
+
+function renderProductsTable() {
+    const { col, dir } = _productsSort;
+    const list = [..._productsCache].sort((a, b) => {
+        if (!col) return 0;
+        const av = _numericCols.has(col) ? Number(a[col]) : (a[col] || '').toLowerCase();
+        const bv = _numericCols.has(col) ? Number(b[col]) : (b[col] || '').toLowerCase();
+        const cmp = av > bv ? 1 : av < bv ? -1 : 0;
+        return dir === 'asc' ? cmp : -cmp;
+    });
+
+    const tbody = list.map(p => `
             <tr>
                 <td>${p.id}</td>
                 <td>${escHtml(p.title)}</td>
@@ -293,21 +329,23 @@ async function loadProducts() {
                     </div>
                 </td>
             </tr>`).join('');
-        document.getElementById('products-body').innerHTML = `
+
+    document.getElementById('products-body').innerHTML = `
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th><th>Title</th><th>Author</th>
-                            <th>Price</th><th>Available</th><th>Description</th><th>Actions</th>
+                            <th style="cursor:pointer;user-select:none" onclick="sortProducts('id')">#${sortIcon('id')}</th>
+                            <th style="cursor:pointer;user-select:none" onclick="sortProducts('title')">Title${sortIcon('title')}</th>
+                            <th style="cursor:pointer;user-select:none" onclick="sortProducts('author')">Author${sortIcon('author')}</th>
+                            <th style="cursor:pointer;user-select:none" onclick="sortProducts('price')">Price${sortIcon('price')}</th>
+                            <th style="cursor:pointer;user-select:none" onclick="sortProducts('quantity')">Available${sortIcon('quantity')}</th>
+                            <th>Description</th><th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>${tbody || '<tr><td colspan="7" class="text-center text-muted py-4">No products found</td></tr>'}</tbody>
                 </table>
             </div>`;
-    } catch (err) {
-        showAlert('products-alert', err.message);
-    }
 }
 
 function showProductModal(product) {
@@ -555,7 +593,7 @@ async function doCreateBooking(e) {
         };
         await api('/api/bookings', { method: 'POST', body: JSON.stringify(body) });
         hideModal('bookingModal');
-        await loadBookings();
+        await Promise.all([loadBookings(), loadProducts()]);
     } catch (err) {
         showAlert('bm-alert', err.message);
         btn.disabled = false;
