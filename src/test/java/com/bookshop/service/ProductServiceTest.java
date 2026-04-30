@@ -72,19 +72,19 @@ class ProductServiceTest {
         when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
         when(productMapper.toDto(product)).thenReturn(productDto);
 
-        List<ProductDto> result = productService.findAll(Pageable.unpaged());
+        Page<ProductDto> result = productService.findAll(Pageable.unpaged());
 
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().getTitle()).isEqualTo("Clean Code");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().getFirst().getTitle()).isEqualTo("Clean Code");
     }
 
     @Test
     void findAll_returnsEmptyListWhenNoProducts() {
         when(productRepository.findAll(any(Pageable.class))).thenReturn(Page.empty());
 
-        List<ProductDto> result = productService.findAll(Pageable.unpaged());
+        Page<ProductDto> result = productService.findAll(Pageable.unpaged());
 
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
     }
 
     @Test

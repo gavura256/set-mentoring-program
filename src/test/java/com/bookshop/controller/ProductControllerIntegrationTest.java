@@ -35,7 +35,7 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTest {
     void getAll_returnsOkWithList() throws Exception {
         mockMvc.perform(get(ApiRoutes.PRODUCTS))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test

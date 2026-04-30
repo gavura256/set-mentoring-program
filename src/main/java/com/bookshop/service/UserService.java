@@ -17,11 +17,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -40,11 +39,9 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public List<UserResponse> findAll() {
-        log.debug("Fetching all users");
-        return userRepository.findAll().stream()
-                .map(userMapper::toResponse)
-                .collect(Collectors.toList());
+    public Page<UserResponse> findAll(Pageable pageable) {
+        log.debug("Fetching all users, pageable: {}", pageable);
+        return userRepository.findAll(pageable).map(userMapper::toResponse);
     }
 
     @Transactional(readOnly = true)

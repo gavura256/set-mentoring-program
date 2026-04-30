@@ -13,12 +13,10 @@ import com.bookshop.repository.ProductRepository;
 import com.bookshop.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -37,11 +35,9 @@ public class BookingService {
     private BookingMapper bookingMapper;
 
     @Transactional(readOnly = true)
-    public List<BookingDto> findAll(Pageable pageable) {
+    public Page<BookingDto> findAll(Pageable pageable) {
         log.debug("Fetching all bookings, pageable: {}", pageable);
-        return bookingRepository.findAllWithFetch(pageable).getContent().stream()
-                .map(bookingMapper::toDto)
-                .collect(Collectors.toList());
+        return bookingRepository.findAllWithFetch(pageable).map(bookingMapper::toDto);
     }
 
     @Transactional(readOnly = true)
@@ -56,16 +52,14 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public List<BookingDto> findByUserId(Long userId) {
-        log.debug("Fetching bookings for userId: {}", userId);
+    public Page<BookingDto> findByUserId(Long userId, Pageable pageable) {
+        log.debug("Fetching bookings for userId: {}, pageable: {}", userId, pageable);
         userRepository.findById(userId)
                 .orElseThrow(() -> {
                     log.info("User not found with id: {}", userId);
                     return new ResourceNotFoundException("User not found with id: " + userId);
                 });
-        return bookingRepository.findByUserIdWithFetch(userId).stream()
-                .map(bookingMapper::toDto)
-                .collect(Collectors.toList());
+        return bookingRepository.findByUserIdWithFetch(userId, pageable).map(bookingMapper::toDto);
     }
 
     @Transactional

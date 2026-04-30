@@ -78,6 +78,28 @@ function currentProductId() { return location.hash.split('/')[2] || null; }
 
 function toList(r) { return Array.isArray(r) ? r : (r?.content || []); }
 
+function pageInfo(r) {
+    return {
+        list: r?.content || [],
+        page: r?.number ?? 0,
+        totalPages: r?.totalPages ?? 1,
+        totalElements: r?.totalElements ?? 0
+    };
+}
+
+function paginationFooter(page, totalPages, totalElements, size, prevFn, nextFn) {
+    const from = totalElements === 0 ? 0 : page * size + 1;
+    const to = Math.min((page + 1) * size, totalElements);
+    return `
+        <div class="d-flex justify-content-between align-items-center mt-2">
+            <span class="text-muted small">Showing ${from}&ndash;${to} of ${totalElements}</span>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" onclick="${prevFn}"${page === 0 ? ' disabled' : ''}>&larr; Prev</button>
+                <button class="btn btn-outline-secondary" onclick="${nextFn}"${page >= totalPages - 1 ? ' disabled' : ''}>Next &rarr;</button>
+            </div>
+        </div>`;
+}
+
 function spinner() { return '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>'; }
 
 function showModal(id) { new bootstrap.Modal(document.getElementById(id)).show(); }
@@ -273,13 +295,16 @@ async function renderProducts() {
         <div id="products-body">
             ${spinner()}
         </div>
-        <p class="text-muted small mt-2">Showing up to 20 results</p>
+        <div id="products-footer"></div>
     </div>`);
     await loadProducts();
 }
 
 let _productsCache = [];
 let _productsSort = { col: null, dir: 'asc' };
+let _productsPage = 0;
+let _bookingsPage = 0;
+let _usersPage = 0;
 const _numericCols = new Set(['id', 'price', 'quantity']);
 
 function sortIcon(c) {
@@ -289,11 +314,21 @@ function sortIcon(c) {
         : '<span class="ms-1" style="font-size:.75em">↓</span>';
 }
 
-async function loadProducts() {
+async function loadProducts(page = 0, col = _productsSort.col, dir = _productsSort.dir) {
     try {
-        const products = await api('/api/products?size=20');
-        _productsCache = toList(products);
+        let url = `/api/products?page=${page}&size=20`;
+        if (col) url += `&sort=${col},${dir}`;
+        const raw = await api(url);
+        const { list, page: p, totalPages, totalElements } = pageInfo(raw);
+        _productsCache = list;
+        _productsPage = p;
         renderProductsTable();
+        const footer = document.getElementById('products-footer');
+        if (footer) footer.innerHTML = paginationFooter(
+            p, totalPages, totalElements, 20,
+            `loadProducts(${p - 1},'${col || ''}','${dir}')`,
+            `loadProducts(${p + 1},'${col || ''}','${dir}')`
+        );
     } catch (err) {
         showAlert('products-alert', err.message);
     }
@@ -305,20 +340,11 @@ function sortProducts(col) {
     } else {
         _productsSort = { col, dir: 'asc' };
     }
-    renderProductsTable();
+    void loadProducts(0, _productsSort.col, _productsSort.dir);
 }
 
 function renderProductsTable() {
-    const { col, dir } = _productsSort;
-    const list = [..._productsCache].sort((a, b) => {
-        if (!col) return 0;
-        const av = _numericCols.has(col) ? Number(a[col]) : (a[col] || '').toLowerCase();
-        const bv = _numericCols.has(col) ? Number(b[col]) : (b[col] || '').toLowerCase();
-        const cmp = av > bv ? 1 : av < bv ? -1 : 0;
-        return dir === 'asc' ? cmp : -cmp;
-    });
-
-    const tbody = list.map(p => `
+    const tbody = _productsCache.map(p => `
             <tr style="cursor:pointer" onclick="navigate('#/products/${p.id}')">
                 <td>${p.id}</td>
                 <td>${escHtml(p.title)}</td>
@@ -470,7 +496,7 @@ async function doSaveProduct(e, productId) {
         await api(path, { method, body: JSON.stringify(body) });
         hideModal('productModal');
         if (onProductsListPage()) {
-            await loadProducts();
+            await loadProducts(productId ? _productsPage : 0);
         } else if (onProductDetailPage()) {
             await loadProductDetail(currentProductId());
         }
@@ -485,7 +511,7 @@ async function doDeleteProduct(id) {
     try {
         await api(`/api/products/${id}`, { method: 'DELETE' });
         if (onProductsListPage()) {
-            await loadProducts();
+            await loadProducts(_productsPage);
         } else {
             navigate('#/products');
         }
@@ -512,25 +538,26 @@ async function renderBookings() {
         <div id="bookings-body">
             ${spinner()}
         </div>
-        <p class="text-muted small mt-2">Showing up to 20 results</p>
+        <div id="bookings-footer"></div>
     </div>`);
     await loadBookings();
 }
 
-async function loadBookings() {
+async function loadBookings(page = 0) {
     try {
         const bookingsPath = isManagerOrAdmin()
-            ? '/api/bookings?size=20'
-            : `/api/bookings/user/${currentUserId()}`;
+            ? `/api/bookings?page=${page}&size=20`
+            : `/api/bookings/user/${currentUserId()}?page=${page}&size=20`;
         const usersPath = isManagerOrAdmin()
-            ? '/api/users'
+            ? '/api/users?size=1000'
             : `/api/users/${currentUserId()}`;
 
-        const [bookings, usersRaw] = await Promise.all([
+        const [bookingsRaw, usersRaw] = await Promise.all([
             api(bookingsPath),
             api(usersPath).catch(() => null)
         ]);
-        const list = toList(bookings);
+        const { list, page: p, totalPages, totalElements } = pageInfo(bookingsRaw);
+        _bookingsPage = p;
         const usersList = isManagerOrAdmin() ? toList(usersRaw) : (usersRaw ? [usersRaw] : []);
         const userMap = Object.fromEntries(usersList.map(u => [u.id, u.email]));
 
@@ -586,6 +613,12 @@ async function loadBookings() {
                     <tbody>${tbody || '<tr><td colspan="7" class="text-center text-muted py-4">No bookings found</td></tr>'}</tbody>
                 </table>
             </div>`;
+        const footer = document.getElementById('bookings-footer');
+        if (footer) footer.innerHTML = paginationFooter(
+            p, totalPages, totalElements, 20,
+            `loadBookings(${p - 1})`,
+            `loadBookings(${p + 1})`
+        );
     } catch (err) {
         showAlert('bookings-alert', err.message);
     }
@@ -663,11 +696,11 @@ async function doCreateBooking(e) {
         await api('/api/bookings', { method: 'POST', body: JSON.stringify(body) });
         hideModal('bookingModal');
         if (onProductsListPage()) {
-            await Promise.all([loadBookings(), loadProducts()]);
+            await Promise.all([loadBookings(0), loadProducts(_productsPage)]);
         } else if (onProductDetailPage()) {
             await loadProductDetail(currentProductId());
         } else {
-            await loadBookings();
+            await loadBookings(0);
         }
     } catch (err) {
         showAlert('bm-alert', err.message);
@@ -683,7 +716,7 @@ async function doUpdateStatus(id, status) {
         });
     } catch (err) {
         showAlert('bookings-alert', err.message);
-        await loadBookings();
+        await loadBookings(_bookingsPage);
     }
 }
 
@@ -691,7 +724,7 @@ async function doDeleteBooking(id) {
     if (!confirm('Delete this booking? This cannot be undone.')) return;
     try {
         await api(`/api/bookings/${id}`, { method: 'DELETE' });
-        await loadBookings();
+        await loadBookings(_bookingsPage);
     } catch (err) {
         showAlert('bookings-alert', err.message);
     }
@@ -707,14 +740,16 @@ async function renderUsers() {
         <div id="users-body">
             ${spinner()}
         </div>
+        <div id="users-footer"></div>
     </div>`);
     await loadUsers();
 }
 
-async function loadUsers() {
+async function loadUsers(page = 0) {
     try {
-        const users = await api('/api/users');
-        const list = toList(users);
+        const raw = await api(`/api/users?page=${page}&size=20`);
+        const { list, page: p, totalPages, totalElements } = pageInfo(raw);
+        _usersPage = p;
         const tbody = list.map(u => `
             <tr>
                 <td>${u.id}</td>
@@ -739,6 +774,12 @@ async function loadUsers() {
                     <tbody>${tbody || '<tr><td colspan="5" class="text-center text-muted py-4">No users found</td></tr>'}</tbody>
                 </table>
             </div>`;
+        const footer = document.getElementById('users-footer');
+        if (footer) footer.innerHTML = paginationFooter(
+            p, totalPages, totalElements, 20,
+            `loadUsers(${p - 1})`,
+            `loadUsers(${p + 1})`
+        );
     } catch (err) {
         showAlert('users-alert', err.message);
     }
@@ -806,7 +847,7 @@ async function doSaveUser(e, userId) {
         };
         await api(`/api/users/${userId}`, { method: 'PUT', body: JSON.stringify(body) });
         hideModal('userModal');
-        await loadUsers();
+        await loadUsers(_usersPage);
     } catch (err) {
         showAlert('um-alert', err.message);
         btn.disabled = false;
@@ -817,7 +858,7 @@ async function doDeleteUser(id) {
     if (!confirm('Delete this user? This cannot be undone.')) return;
     try {
         await api(`/api/users/${id}`, { method: 'DELETE' });
-        await loadUsers();
+        await loadUsers(_usersPage);
     } catch (err) {
         showAlert('users-alert', err.message);
     }

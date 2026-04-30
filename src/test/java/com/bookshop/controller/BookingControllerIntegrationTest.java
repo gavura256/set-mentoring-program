@@ -113,7 +113,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     void getAll_returnsOkWithList() throws Exception {
         mockMvc.perform(get(ApiRoutes.BOOKINGS))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test
@@ -365,7 +365,7 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
 
         mockMvc.perform(get(ApiRoutes.BOOKINGS + "/user/{userId}", userId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+                .andExpect(jsonPath("$.content").isArray());
     }
 
     @Test

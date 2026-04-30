@@ -23,7 +23,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
-import java.util.List;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 
 @RestController
 @RequestMapping(ApiRoutes.BOOKINGS)
@@ -36,7 +39,7 @@ public class BookingController {
     @GetMapping
     @Operation(summary = "Get all bookings")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR')")
-    public List<BookingDto> getAll(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
+    public Page<BookingDto> getAll(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
         return bookingService.findAll(pageable);
     }
 
@@ -50,8 +53,9 @@ public class BookingController {
     @GetMapping(ApiRoutes.BY_USER_ID)
     @Operation(summary = "Get bookings by user ID")
     @PreAuthorize("hasAnyRole('MANAGER','ADMINISTRATOR') or #userId == authentication.principal.id")
-    public List<BookingDto> getByUserId(@PathVariable Long userId) {
-        return bookingService.findByUserId(userId);
+    public Page<BookingDto> getByUserId(@PathVariable Long userId,
+            @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
+        return bookingService.findByUserId(userId, pageable);
     }
 
     @PostMapping
