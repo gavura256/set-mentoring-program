@@ -1,4 +1,5 @@
 'use strict';
+/* global bootstrap */
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const SESSION_KEY = 'bookshop_session';
@@ -65,6 +66,16 @@ function roleBadge(role) {
     return `<span class="badge bg-${map[role] || 'secondary'}">${escHtml(role)}</span>`;
 }
 
+function stockBadge(qty) {
+    return qty > 0
+        ? `<span class="badge bg-success">In Stock &middot; ${qty}</span>`
+        : `<span class="badge bg-danger">Out of Stock</span>`;
+}
+
+function onProductsListPage() { return !!document.getElementById('products-body'); }
+function onProductDetailPage() { return !!document.getElementById('pd-body'); }
+function currentProductId() { return location.hash.split('/')[2] || null; }
+
 function toList(r) { return Array.isArray(r) ? r : (r?.content || []); }
 
 function spinner() { return '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>'; }
@@ -83,11 +94,15 @@ function route() {
 
     if (hash === '#/login') renderLogin();
     else if (hash === '#/register') renderRegister();
-    else if (hash === '#/products') renderProducts();
-    else if (hash === '#/bookings') renderBookings();
+    else if (hash === '#/products') void renderProducts();
+    else if (hash === '#/bookings') void renderBookings();
     else if (hash === '#/users') {
         if (!isManagerOrAdmin()) { navigate('#/products'); return; }
-        renderUsers();
+        void renderUsers();
+    } else if (hash.startsWith('#/products/')) {
+        const id = currentProductId();
+        if (id) void renderProductDetail(id);
+        else navigate('#/products');
     } else {
         navigate(sess ? '#/products' : '#/login');
     }
@@ -304,14 +319,14 @@ function renderProductsTable() {
     });
 
     const tbody = list.map(p => `
-            <tr>
+            <tr style="cursor:pointer" onclick="navigate('#/products/${p.id}')">
                 <td>${p.id}</td>
                 <td>${escHtml(p.title)}</td>
                 <td>${escHtml(p.author)}</td>
                 <td>$${Number(p.price).toFixed(2)}</td>
                 <td>${p.quantity ?? 0}</td>
                 <td class="text-muted small text-truncate" style="max-width:200px">${escHtml(p.description || '')}</td>
-                <td>
+                <td onclick="event.stopPropagation()">
                     <div class="dropdown d-inline-block">
                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle"
                             data-bs-toggle="dropdown">Actions</button>
@@ -346,6 +361,48 @@ function renderProductsTable() {
                     <tbody>${tbody || '<tr><td colspan="7" class="text-center text-muted py-4">No products found</td></tr>'}</tbody>
                 </table>
             </div>`;
+}
+
+async function renderProductDetail(id) {
+    setContent(`${navbar()}<div class="container mt-4"><div id="pd-body">${spinner()}</div></div>`);
+    await loadProductDetail(id);
+}
+
+async function loadProductDetail(id) {
+    try {
+        window._pd = await api(`/api/products/${id}`);
+        const p = window._pd;
+        const adminActions = isManagerOrAdmin() || isAdmin() ? `
+                <div class="d-flex gap-2">
+                    ${isManagerOrAdmin() ? `<button class="btn btn-outline-secondary btn-sm" onclick="showProductModal(window._pd)">Edit</button>` : ''}
+                    ${isAdmin() ? `<button class="btn btn-outline-danger btn-sm" onclick="doDeleteProduct(window._pd.id)">Delete</button>` : ''}
+                </div>` : '';
+        document.getElementById('pd-body').innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <a href="#/products" class="btn btn-outline-secondary btn-sm">&larr; Back to Products</a>
+                ${adminActions}
+            </div>
+            <div class="row">
+                <div class="col-lg-8">
+                    <h3 class="mb-1">${escHtml(p.title)}</h3>
+                    <p class="text-muted mb-3">by ${escHtml(p.author || '—')}</p>
+                    <hr>
+                    <h6 class="mb-2">About this book</h6>
+                    <p class="text-muted">${escHtml(p.description || '—')}</p>
+                </div>
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <div class="fs-3 fw-bold mb-2">$${Number(p.price).toFixed(2)}</div>
+                            <div class="mb-3">${stockBadge(p.quantity ?? 0)}</div>
+                            <button class="btn btn-primary w-100" onclick="showBookingModal(window._pd)">Book Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    } catch (err) {
+        document.getElementById('pd-body').innerHTML = `<div class="alert alert-danger">${escHtml(err.message)}</div>`;
+    }
 }
 
 function showProductModal(product) {
@@ -412,7 +469,11 @@ async function doSaveProduct(e, productId) {
         const path = productId ? `/api/products/${productId}` : '/api/products';
         await api(path, { method, body: JSON.stringify(body) });
         hideModal('productModal');
-        await loadProducts();
+        if (onProductsListPage()) {
+            await loadProducts();
+        } else if (onProductDetailPage()) {
+            await loadProductDetail(currentProductId());
+        }
     } catch (err) {
         showAlert('pm-alert', err.message);
         btn.disabled = false;
@@ -423,9 +484,17 @@ async function doDeleteProduct(id) {
     if (!confirm('Delete this product? This cannot be undone.')) return;
     try {
         await api(`/api/products/${id}`, { method: 'DELETE' });
-        await loadProducts();
+        if (onProductsListPage()) {
+            await loadProducts();
+        } else {
+            navigate('#/products');
+        }
     } catch (err) {
-        showAlert('products-alert', err.message);
+        if (onProductsListPage()) {
+            showAlert('products-alert', err.message);
+        } else {
+            alert(err.message);
+        }
     }
 }
 
@@ -593,7 +662,13 @@ async function doCreateBooking(e) {
         };
         await api('/api/bookings', { method: 'POST', body: JSON.stringify(body) });
         hideModal('bookingModal');
-        await Promise.all([loadBookings(), loadProducts()]);
+        if (onProductsListPage()) {
+            await Promise.all([loadBookings(), loadProducts()]);
+        } else if (onProductDetailPage()) {
+            await loadProductDetail(currentProductId());
+        } else {
+            await loadBookings();
+        }
     } catch (err) {
         showAlert('bm-alert', err.message);
         btn.disabled = false;
