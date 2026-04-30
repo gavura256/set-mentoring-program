@@ -46,6 +46,7 @@ public class AuthController {
                 .token(jwt)
                 .role(userDetails.getRole())
                 .userId(userDetails.getId())
+                .name(userDetails.getName())
                 .build());
     }
 

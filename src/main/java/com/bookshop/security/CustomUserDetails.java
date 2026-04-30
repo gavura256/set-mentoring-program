@@ -14,6 +14,8 @@ public class CustomUserDetails implements UserDetails {
 
     @Getter
     private final Long id;
+    @Getter
+    private final String name;
     private final String email;
     private final String password;
     @Getter
@@ -22,6 +24,7 @@ public class CustomUserDetails implements UserDetails {
 
     public CustomUserDetails(User user) {
         this.id = user.getId();
+        this.name = user.getName();
         this.email = user.getEmail();
         this.password = user.getPassword();
         this.role = user.getRole();
