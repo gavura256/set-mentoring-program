@@ -12,8 +12,6 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      TESTCONTAINERS_RYUK_DISABLED: 'true'
 
     steps:
       - uses: actions/checkout@v4
