@@ -39,15 +39,15 @@ jobs:
           path: target/site/allure-maven-plugin/
 
       - name: Publish Playwright Traces
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-traces
           path: target/traces/
 
       - name: Publish Failure Screenshots
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: failure-screenshots
+          name: screenshots
           path: target/screenshots/
