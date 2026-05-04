@@ -134,7 +134,9 @@ public class UserService {
         var bookings = bookingRepository.findByUserIdWithFetch(id);
         if (!bookings.isEmpty()) {
             log.info("Cannot delete userId: {} — existing bookings present", id);
-            throw new InvalidOperationException("Cannot delete user with existing bookings. Please delete all bookings for this user first.");
+            throw new InvalidOperationException(
+                    "Cannot delete user with existing bookings. "
+                    + "Please delete all bookings for this user first.");
         }
         userRepository.deleteById(id);
         log.info("User deleted, userId: {}", id);

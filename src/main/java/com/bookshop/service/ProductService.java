@@ -67,11 +67,11 @@ public class ProductService {
                     return new ResourceNotFoundException("Product not found with id: " + id);
                 });
 
-        if (dto.getTitle() != null) product.setTitle(dto.getTitle());
-        if (dto.getAuthor() != null) product.setAuthor(dto.getAuthor());
-        if (dto.getPrice() != null) product.setPrice(dto.getPrice());
-        if (dto.getDescription() != null) product.setDescription(dto.getDescription());
-        if (dto.getQuantity() != null) product.setQuantity(dto.getQuantity());
+        if (dto.getTitle() != null) { product.setTitle(dto.getTitle()); }
+        if (dto.getAuthor() != null) { product.setAuthor(dto.getAuthor()); }
+        if (dto.getPrice() != null) { product.setPrice(dto.getPrice()); }
+        if (dto.getDescription() != null) { product.setDescription(dto.getDescription()); }
+        if (dto.getQuantity() != null) { product.setQuantity(dto.getQuantity()); }
 
         Product saved = productRepository.save(product);
         log.info("Product updated, productId: {}", saved.getId());
