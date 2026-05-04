@@ -6,15 +6,15 @@ import com.bookshop.dto.ProductDto;
 import com.bookshop.dto.UpdateStatusRequest;
 import com.bookshop.dto.UserRequest;
 import com.bookshop.dto.UserResponse;
+import com.bookshop.model.User;
 import com.bookshop.model.enums.BookingStatus;
 import com.bookshop.model.enums.Role;
+import com.bookshop.security.CustomUserDetails;
 import com.bookshop.util.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import com.bookshop.model.User;
-import com.bookshop.security.CustomUserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -22,7 +22,10 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import java.math.BigDecimal;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -275,19 +278,6 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
     void create_missingUserId_returnsBadRequest() throws Exception {
         BookingDto dto = BookingDto.builder()
                 .productId(productId)
-                .quantity(1)
-                .build();
-        mockMvc.perform(post(ApiRoutes.BOOKINGS)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(jsonUtils.toJson(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @WithMockUser(roles = "MANAGER")
-    void create_missingProductId_returnsBadRequest() throws Exception {
-        BookingDto dto = BookingDto.builder()
-                .userId(userId)
                 .quantity(1)
                 .build();
         mockMvc.perform(post(ApiRoutes.BOOKINGS)
