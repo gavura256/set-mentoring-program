@@ -1,3 +1,3 @@
 package com.bookshop.dto.validation;
 
-public interface OnCreate {}
+public interface OnCreate { }

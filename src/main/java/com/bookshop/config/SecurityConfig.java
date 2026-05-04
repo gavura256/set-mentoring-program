@@ -3,6 +3,7 @@ package com.bookshop.config;
 import com.bookshop.controller.ApiRoutes;
 import com.bookshop.security.JwtAuthFilter;
 import com.bookshop.security.RateLimitFilter;
+import com.bookshop.security.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +20,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import com.bookshop.security.UserDetailsServiceImpl;
 
 @Configuration
 @EnableWebSecurity
@@ -50,12 +50,16 @@ public class SecurityConfig {
                         .authenticationEntryPoint((_, response, _) -> {
                             response.setContentType("application/json");
                             response.setStatus(401);
-                            response.getWriter().write("{\"status\": 401, \"error\": \"Unauthorized\", \"message\": \"Authentication required\"}");
+                            response.getWriter().write(
+                                    "{\"status\": 401, \"error\": \"Unauthorized\", "
+                                            + "\"message\": \"Authentication required\"}");
                         })
                         .accessDeniedHandler((_, response, _) -> {
                             response.setContentType("application/json");
                             response.setStatus(403);
-                            response.getWriter().write("{\"status\": 403, \"error\": \"Forbidden\", \"message\": \"Access denied\"}");
+                            response.getWriter().write(
+                                    "{\"status\": 403, \"error\": \"Forbidden\", "
+                                            + "\"message\": \"Access denied\"}");
                         })
                 );
 

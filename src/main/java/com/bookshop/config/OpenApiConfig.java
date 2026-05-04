@@ -16,12 +16,15 @@ public class OpenApiConfig {
     public OpenApiCustomizer pageableExampleCustomizer() {
         return openApi -> openApi.getPaths().values().forEach(pathItem ->
                 pathItem.readOperations().forEach(operation -> {
-                    if (operation.getParameters() == null) return;
+                    if (operation.getParameters() == null) {
+                        return;
+                    }
                     operation.getParameters().forEach(parameter -> {
                         switch (parameter.getName()) {
                             case "page" -> parameter.setExample(0);
                             case "size" -> parameter.setExample(20);
                             case "sort" -> parameter.setExample("id,asc");
+                            default -> { /* no default action needed */ }
                         }
                     });
                 })
