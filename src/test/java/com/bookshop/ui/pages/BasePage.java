@@ -17,16 +17,12 @@ public abstract class BasePage {
     protected final Page page;
     private final String baseUrl;
 
-    // ── navigation ──────────────────────────────────────────────────────────
-
     public void open() {
         log.info("Navigating to {}", baseUrl);
         page.navigate(baseUrl);
         page.waitForLoadState(LoadState.DOMCONTENTLOADED);
         log.info("Page opened – url={}", baseUrl);
     }
-
-    // ── locator wrappers with logging ────────────────────────────────────────
 
     protected void click(String selector) {
         log.info("Clicking: {}", selector);
@@ -76,7 +72,7 @@ public abstract class BasePage {
     protected boolean waitForHidden(String selector) {
         try {
             page.locator(selector)
-                .waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
+                    .waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
             log.info("waitForHidden({}): true", selector);
             return true;
         } catch (Exception e) {
