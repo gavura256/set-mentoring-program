@@ -10,6 +10,7 @@
     <appender name="ALLURE" class="com.bookshop.AllureLogAppender"/>
 
     <logger name="com.bookshop" level="DEBUG"/>
+    <logger name="com.microsoft.playwright" level="WARN"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

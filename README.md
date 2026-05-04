@@ -14,6 +14,7 @@ A RESTful web service for a bookshop application, providing management for produ
 - **Security:** Spring Security with JWT
 - **API Documentation:** SpringDoc OpenAPI (Swagger UI)
 - **Testing:** JUnit 5, Mockito, AssertJ, Allure, Testcontainers
+- **E2E / UI:** Playwright, Cucumber, Allure Cucumber JVM
 - **Other:** Lombok, MapStruct, Docker Compose
 
 ## Project Structure
@@ -190,22 +191,72 @@ All production credentials are loaded from `.env` (gitignored). Use `.env.exampl
 
 ## Scripts
 
-- **Build project:** `./mvnw clean install`
-- **Run all tests:** `./mvnw test`
-- **Run specific test class:** `./mvnw -Dtest=ClassName test`
-- **Generate Allure report:**
-  ```bash
-  ./mvnw allure:serve
-  ```
+| Command | Description |
+|---|---|
+| `./mvnw clean install` | Build project |
+| `./mvnw test` | Run all tests (unit + integration) |
+| `./mvnw test -Punit` | Run unit tests only |
+| `./mvnw test -Pint` | Run integration tests only |
+| `./mvnw test -Pui` | Run UI smoke tests only |
+| `./mvnw verify` | Run tests + enforce coverage thresholds |
+| `./mvnw allure:serve` | Generate and view Allure report |
 
 ## Testing
 
-- **Unit Tests:** `src/test/java/com/bookshop/service/` — Mockito-based, no container required.
-- **Integration Tests:** `src/test/java/com/bookshop/controller/` — `MockMvc` + `@SpringBootTest` backed by a real MySQL 5.7 container via Testcontainers.
-  - All controller test classes extend `AbstractIntegrationTest`.
-  - `TestContainersConfig` uses `@ServiceConnection` to auto-wire the datasource from the container.
-  - The `dev` Spring profile is activated during tests; Testcontainers overrides the datasource URL.
-- **Database Isolation:** Integration tests use `@Transactional` to roll back after each test.
+### Test Categories
+
+| Category | Location | Framework | Requires Docker |
+|---|---|---|---|
+| **Unit** | `src/test/java/com/bookshop/service/` | Mockito, AssertJ | No |
+| **Integration** | `src/test/java/com/bookshop/controller/` | MockMvc, Testcontainers | Yes |
+| **UI / E2E** | `src/test/java/com/bookshop/ui/` | Playwright, Cucumber | No |
+
+### Unit Tests
+
+Mockito-based service tests with no Spring context and no external dependencies. Naming: `*ServiceTest.java`, `*Test.java`.
+
+```bash
+./mvnw test -Punit
+```
+
+### Integration Tests
+
+`@SpringBootTest` with `MockMvc` backed by a real MySQL 5.7 container via Testcontainers. All controller test classes extend `AbstractIntegrationTest`. Naming: `*IntegrationTest.java`.
+
+The `dev` Spring profile is activated; Testcontainers overrides the datasource URL. `@Transactional` rolls back after each test.
+
+```bash
+./mvnw test -Pint
+```
+
+> **Note:** Docker must be running for integration tests. For Rancher Desktop, see Testcontainers config above.
+
+### UI / E2E Smoke Tests
+
+Browser-based smoke tests using **Playwright** (headless Chromium) with **Cucumber** for Gherkin scenarios and **Allure Cucumber JVM** for reporting. Naming: `*Runner.java`.
+
+```
+src/test/java/com/bookshop/ui/
+├── config        Spring Boot test config + FrameworkConfig (timeouts, credentials)
+├── context       TestContext — per-scenario page objects and wiring
+├── driver        PlaywrightManager — browser lifecycle and trace capture
+├── hooks         CucumberHooks — scenario setup/teardown, Allure log attachment
+├── pages         Page objects (LoginPage, ProductsPage, UsersPage, etc.)
+├── runner        Test runner (JUnit Platform Suite)
+└── steps         Step definitions (LoginSteps, ProductsSteps, etc.)
+```
+
+**Config:** `src/test/resources/application.properties` holds base URL, credentials, and Playwright settings. Credentials are never hardcoded in step definitions or feature files.
+
+**Traces:** Playwright traces are saved to `target/traces/` per scenario. On failure, screenshots and traces are attached to the Allure report automatically.
+
+**Logs:** Per-scenario application logs are captured via `AllureLogAppender` (Logback) and attached to each Allure result as a `Logs` text attachment.
+
+```bash
+./mvnw test -Pui
+./mvnw allure:serve         # view results
+```
+
 - **CVE note:** `commons-compress` is pinned to `1.27.1` in `dependencyManagement` to address CVE-2024-25710 and CVE-2024-26308 (transitive via Testcontainers).
 
 ## Docker Image

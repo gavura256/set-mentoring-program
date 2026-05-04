@@ -12,6 +12,27 @@ Refer to and follow ["Claude Code Best Practices"](https://code.claude.com/docs/
   https://code.claude.com/docs/llms.txt  
   Use this as the starting point for discovering available guides and details.
 
+## Project Structure
+
+- **Backend:** Controller → Service → Converter → Repository (N-tier, `com.bookshop.*`)
+- **Frontend:** Single-page app in `src/main/resources/static/` (vanilla JS, hash-based routing: `#/products`, `#/bookings`, `#/users`, `#/login`, `#/register`)
+- **UI Tests:** `src/test/java/com/bookshop/ui/` — Playwright + Cucumber page objects, step definitions, hooks, and runner
+- **Feature files:** `src/test/resources/features/smoke/` — Gherkin scenarios (login, authenticated pages, authorization, navigation)
+- **Test config:** `src/test/resources/application.properties` — base URL, Playwright settings, and credentials (`framework.admin-email`, etc.)
+- **Allure log capture:** `AllureLogAppender` (Logback appender) buffers per-thread logs; `CucumberHooks.attachScenarioLogs()` flushes them into Allure attachments after each scenario
+- **Credentials:** never hardcoded — read from `FrameworkConfig` which maps from `application.properties`
+
+## Test Commands
+
+| Command | Scope |
+|---|---|
+| `./mvnw test` | Unit + integration (default) |
+| `./mvnw test -Punit` | Unit only (*ServiceTest, *Test, excluding *IntegrationTest) |
+| `./mvnw test -Pint` | Integration only (*IntegrationTest, requires Docker) |
+| `./mvnw test -Pui` | UI smoke only (*Runner: Playwright + Cucumber) |
+| `./mvnw verify` | All tests + JaCoCo coverage thresholds |
+| `./mvnw allure:serve` | Generate and view Allure report |
+
 ---
 
 ## Instructions
