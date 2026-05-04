@@ -14,6 +14,9 @@ spring:
       settings:
         web-allow-others: false
   jpa:
+    # Disable OSIV — avoids lazy-loading traps and prevents
+    # JPA session conflicts with @Transactional integration tests.
+    open-in-view: false
     hibernate:
       ddl-auto: validate
 
