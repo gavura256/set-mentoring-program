@@ -257,6 +257,19 @@ src/test/java/com/bookshop/ui/
 ./mvnw allure:serve         # view results
 ```
 
+#### Viewing a Downloaded Allure Report (CI Artifact)
+
+The CI workflow uploads the Allure HTML report as a build artifact. Opening `index.html` directly from disk won't work due to browser CORS restrictions on `file://` URLs — the report must be served via HTTP.
+
+**Quickest option — Python (built into most OSes):**
+```bash
+# Install Python if needed:
+#   Windows:  winget install Python.Python.3.12
+#   macOS:    brew install python3
+#   Linux:    sudo apt install python3  (Debian/Ubuntu)
+python -m http.server 8080
+# Open http://localhost:8080
+```
 - **CVE note:** `commons-compress` is pinned to `1.27.1` in `dependencyManagement` to address CVE-2024-25710 and CVE-2024-26308 (transitive via Testcontainers).
 
 ## Docker Image
