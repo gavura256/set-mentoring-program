@@ -24,10 +24,7 @@ public class LoginSteps {
     @Given("the admin user is logged in")
     public void theAdminUserIsLoggedIn() {
         ctx.getLoginPage().open();
-        ctx.getLoginPage()
-           .fillEmail(ctx.getConfig().getAdminEmail())
-           .fillPassword(ctx.getConfig().getAdminPassword())
-           .submitLogin();
+        logIn(ctx.getConfig().getAdminEmail(), ctx.getConfig().getAdminPassword());
         assertThat(ctx.getLoginPage().isLoginSuccessful())
                 .as("Admin login should succeed")
                 .isTrue();
@@ -36,10 +33,7 @@ public class LoginSteps {
     @Given("the manager user is logged in")
     public void theManagerUserIsLoggedIn() {
         ctx.getLoginPage().open();
-        ctx.getLoginPage()
-           .fillEmail(ctx.getConfig().getManagerEmail())
-           .fillPassword(ctx.getConfig().getManagerPassword())
-           .submitLogin();
+        logIn(ctx.getConfig().getManagerEmail(), ctx.getConfig().getManagerPassword());
         assertThat(ctx.getLoginPage().isLoginSuccessful())
                 .as("Manager login should succeed")
                 .isTrue();
@@ -47,18 +41,12 @@ public class LoginSteps {
 
     @When("the user logs in as admin")
     public void theUserLogsInAsAdmin() {
-        ctx.getLoginPage()
-           .fillEmail(ctx.getConfig().getAdminEmail())
-           .fillPassword(ctx.getConfig().getAdminPassword())
-           .submitLogin();
+        logIn(ctx.getConfig().getAdminEmail(), ctx.getConfig().getAdminPassword());
     }
 
     @When("the user logs in as manager")
     public void theUserLogsInAsManager() {
-        ctx.getLoginPage()
-           .fillEmail(ctx.getConfig().getManagerEmail())
-           .fillPassword(ctx.getConfig().getManagerPassword())
-           .submitLogin();
+        logIn(ctx.getConfig().getManagerEmail(), ctx.getConfig().getManagerPassword());
     }
 
     @Then("the user should be redirected to the products page")
@@ -96,5 +84,12 @@ public class LoginSteps {
         assertThat(ctx.getLoginPage().isLoginFormVisible())
                 .as("Login form should be displayed")
                 .isTrue();
+    }
+
+    private void logIn(String email, String password) {
+        ctx.getLoginPage()
+                .fillEmail(email)
+                .fillPassword(password)
+                .submitLogin();
     }
 }

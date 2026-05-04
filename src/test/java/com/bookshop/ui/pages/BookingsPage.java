@@ -17,4 +17,9 @@ public class BookingsPage extends BasePage {
                 .filter(row -> !row.innerText().contains("No bookings found"))
                 .count();
     }
+
+    public void cancelLastBooking() {
+        page.locator(ROWS_SELECTOR).last().locator("select.status-select")
+                .selectOption("CANCELLED");
+    }
 }

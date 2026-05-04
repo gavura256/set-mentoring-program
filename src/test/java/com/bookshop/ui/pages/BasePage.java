@@ -49,10 +49,16 @@ public abstract class BasePage {
         return text;
     }
 
+    protected String firstInnerText(String selector) {
+        String text = page.locator(selector).first().innerText();
+        log.info("First text from {}: '{}'", selector, text);
+        return text;
+    }
+
     protected int count(String selector) {
-        int n = page.locator(selector).count();
-        log.info("Count({}): {}", selector, n);
-        return n;
+        int count = page.locator(selector).count();
+        log.info("Count({}): {}", selector, count);
+        return count;
     }
 
     protected boolean isVisible(String selector) {

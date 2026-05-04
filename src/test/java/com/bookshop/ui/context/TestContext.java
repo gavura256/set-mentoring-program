@@ -5,6 +5,7 @@ import com.bookshop.ui.driver.PlaywrightManager;
 import com.bookshop.ui.pages.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -21,8 +22,12 @@ public class TestContext {
     private ProductsPage productsPage;
     private ProductDetailPage productDetailPage;
     private BookingsPage bookingsPage;
+    private BookingModal bookingModal;
     private UsersPage usersPage;
     private Navbar navbar;
+
+    @Getter @Setter
+    private int notedQuantity;
 
     public LoginPage getLoginPage() {
         if (loginPage == null) loginPage = new LoginPage(playwrightManager.getPage(), config.getBaseUrl());
@@ -47,6 +52,11 @@ public class TestContext {
     public BookingsPage getBookingsPage() {
         if (bookingsPage == null) bookingsPage = new BookingsPage(playwrightManager.getPage(), config.getBaseUrl());
         return bookingsPage;
+    }
+
+    public BookingModal getBookingModal() {
+        if (bookingModal == null) bookingModal = new BookingModal(playwrightManager.getPage(), config.getBaseUrl());
+        return bookingModal;
     }
 
     public UsersPage getUsersPage() {
