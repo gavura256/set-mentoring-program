@@ -1,0 +1,35 @@
+name: UI Tests
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ui-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: UI Smoke Tests
+        run: ./mvnw test -Pui -B
+
+      - name: Publish Allure Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: target/site/allure-maven-plugin/
