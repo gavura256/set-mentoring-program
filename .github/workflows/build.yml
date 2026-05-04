@@ -31,7 +31,7 @@ jobs:
         run: ./mvnw test -Punit -B
 
       - name: Integration Tests
-        run: ./mvnw test -Pint -B
+        run: ./mvnw test -Pint -B -Djunit.jupiter.execution.parallel.enabled=false
 
       - name: Coverage Check
         run: ./mvnw jacoco:report jacoco:check -B
