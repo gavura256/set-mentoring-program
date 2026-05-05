@@ -17,7 +17,7 @@ public class UsersSteps {
     @When("the user navigates to the users page")
     public void theUserNavigatesToTheUsersPage() {
         ctx.getNavbar().clickUsers();
-        ctx.getPlaywrightManager().getPage().waitForSelector("#users-body table");
+        ctx.getUsersPage().waitForLoaded();
     }
 
     @Then("the users table should have at least one row")

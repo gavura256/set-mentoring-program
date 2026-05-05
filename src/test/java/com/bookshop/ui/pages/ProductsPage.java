@@ -6,10 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ProductsPage extends BasePage {
 
-    private static final String ROWS_SELECTOR = "#products-body tbody tr";
-    private static final String QTY_SELECTOR    = ROWS_SELECTOR + " td:nth-child(5)";
-    private static final String ACTIONS_TOGGLE  = ROWS_SELECTOR + " td:last-child .dropdown-toggle";
-    private static final String ACTIONS_BOOK    = ROWS_SELECTOR + " td:last-child .dropdown-item";
+    private static final String TABLE_SELECTOR = "#products-body table";
+    private static final String ROWS_SELECTOR  = TABLE_SELECTOR + " tbody tr";
+    private static final String QTY_SELECTOR   = ROWS_SELECTOR + " td:nth-child(5)";
+    private static final String ACTIONS_TOGGLE = ROWS_SELECTOR + " td:last-child .dropdown-toggle";
+    private static final String ACTIONS_BOOK   = ROWS_SELECTOR + " td:last-child .dropdown-item";
 
     public ProductsPage(Page page, String baseUrl) {
         super(page, baseUrl);
@@ -32,5 +33,9 @@ public class ProductsPage extends BasePage {
     public void clickBookFirstProduct() {
         clickFirst(ACTIONS_TOGGLE);
         clickFirst(ACTIONS_BOOK);
+    }
+
+    public void waitForLoaded() {
+        waitForSelector(TABLE_SELECTOR);
     }
 }

@@ -19,4 +19,8 @@ public class RegistrationPage extends BasePage {
                 && isVisible(EMAIL_SELECTOR)
                 && isVisible(PASSWORD_SELECTOR);
     }
+
+    public void waitForForm() {
+        waitForSelector(NAME_SELECTOR);
+    }
 }

@@ -20,4 +20,8 @@ public class ProductDetailPage extends BasePage {
     public String getPriceText() {
         return innerText(PRICE_SELECTOR);
     }
+
+    public void waitForLoaded() {
+        waitForSelector(TITLE_SELECTOR);
+    }
 }
