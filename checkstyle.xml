@@ -30,7 +30,10 @@
     <module name="TreeWalker">
         <module name="SuppressWarningsHolder"/>
         <module name="MissingOverride"/>
-        <module name="AvoidStarImport"/>
+        <module name="AvoidStarImport">
+            <property name="allowStaticMemberImports" value="false"/>
+            <property name="allowClassImports" value="false"/>
+        </module>
         <module name="IllegalImport"/>
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
