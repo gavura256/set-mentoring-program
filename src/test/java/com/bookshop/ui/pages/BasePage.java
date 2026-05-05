@@ -8,8 +8,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
-
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class BasePage {
@@ -22,6 +20,22 @@ public abstract class BasePage {
         page.navigate(baseUrl);
         page.waitForLoadState(LoadState.DOMCONTENTLOADED);
         log.info("Page opened – url={}", baseUrl);
+    }
+
+    public void navigateToHash(String hash) {
+        String url = baseUrl + "/#" + hash;
+        log.info("Navigating to hash route: {}", url);
+        page.navigate(url);
+        page.waitForLoadState(LoadState.DOMCONTENTLOADED);
+    }
+
+    protected void waitForSelector(String selector) {
+        log.info("Waiting for selector: {}", selector);
+        page.waitForSelector(selector);
+    }
+
+    protected void waitForNetworkIdle() {
+        page.waitForLoadState(LoadState.NETWORKIDLE);
     }
 
     protected void click(String selector) {
@@ -63,10 +77,17 @@ public abstract class BasePage {
         return visible;
     }
 
-    protected List<Locator> all(String selector) {
-        List<Locator> list = page.locator(selector).all();
-        log.info("all({}): {} elements", selector, list.size());
-        return list;
+    protected long countExcludingText(String selector, String text) {
+        long count = page.locator(selector).all().stream()
+                .filter(row -> !row.innerText().contains(text))
+                .count();
+        log.info("countExcludingText({}, \"{}\"): {}", selector, text, count);
+        return count;
+    }
+
+    protected void selectOptionOnLast(String parentSelector, String childSelector, String value) {
+        log.info("Selecting option '{}' on last row — parent: {}, child: {}", value, parentSelector, childSelector);
+        page.locator(parentSelector).last().locator(childSelector).selectOption(value);
     }
 
     protected boolean waitForHidden(String selector) {
