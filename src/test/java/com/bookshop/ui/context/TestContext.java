@@ -2,7 +2,14 @@ package com.bookshop.ui.context;
 
 import com.bookshop.ui.config.FrameworkConfig;
 import com.bookshop.ui.driver.PlaywrightManager;
-import com.bookshop.ui.pages.*;
+import com.bookshop.ui.pages.BookingModal;
+import com.bookshop.ui.pages.BookingsPage;
+import com.bookshop.ui.pages.LoginPage;
+import com.bookshop.ui.pages.Navbar;
+import com.bookshop.ui.pages.ProductDetailPage;
+import com.bookshop.ui.pages.ProductsPage;
+import com.bookshop.ui.pages.RegistrationPage;
+import com.bookshop.ui.pages.UsersPage;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
