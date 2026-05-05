@@ -11,6 +11,7 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "framework")
 public class FrameworkConfig {
 
+    private BrowserName browser;
     private String baseUrl;
     private boolean headless;
     private Duration defaultTimeout;

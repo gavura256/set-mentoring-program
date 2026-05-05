@@ -2,9 +2,15 @@ name: UI Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser to run UI tests against'
+        type: choice
+        options: [chromium, firefox, webkit]
+        default: chromium
 
 concurrency:
-  group: ui-${{ github.ref }}
+  group: ui-${{ github.ref }}-${{ inputs.browser }}
   cancel-in-progress: true
 
 jobs:
@@ -21,11 +27,11 @@ jobs:
           java-version: '25'
           cache: maven
 
-      - name: Install Playwright browsers
-        run: npx playwright install chromium
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps ${{ inputs.browser }}
 
       - name: UI Smoke Tests
-        run: ./mvnw test -Pui -B
+        run: ./mvnw test -Pui -Dframework.browser=${{ inputs.browser }} -B
 
       - name: Generate Allure Report
         if: always()
@@ -35,19 +41,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report
+          name: allure-report-${{ inputs.browser }}
           path: target/site/allure-maven-plugin/
 
       - name: Publish Playwright Traces
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces
+          name: playwright-traces-${{ inputs.browser }}
           path: target/traces/
 
       - name: Publish Failure Screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots
+          name: screenshots-${{ inputs.browser }}
           path: target/screenshots/
