@@ -94,6 +94,7 @@ Refer to and follow ["Claude Code Best Practices"](https://code.claude.com/docs/
 - No repository lookups in mappers.
 - Do not change endpoint paths, code structures, or conventions without explicit instruction.
 - Do not bloat context; reference rather than paste.
+- **Never use wildcard imports** (`import foo.*;` or `import static foo.Assertions.*;`). Always import each class/static member individually. This is enforced by Checkstyle (`AvoidStarImport`).
 - If context, scope, or requirements are unclear, always ask for user input or clarification before moving forward.
 
 ---
