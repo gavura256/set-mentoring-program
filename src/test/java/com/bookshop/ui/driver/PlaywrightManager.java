@@ -1,5 +1,6 @@
 package com.bookshop.ui.driver;
 
+import com.bookshop.ui.config.BrowserName;
 import com.bookshop.ui.config.FrameworkConfig;
 import com.microsoft.playwright.*;
 import lombok.Getter;
@@ -31,13 +32,16 @@ public class PlaywrightManager {
             log.warn("PlaywrightManager.initialize() called more than once — ignoring duplicate call");
             return;
         }
-        log.info("Initialising Playwright [headless={}]", config.isHeadless());
+        BrowserName selected = config.getBrowser();
+        log.info("Initialising Playwright [browser={}, headless={}]", selected, config.isHeadless());
+
+        selected.checkCompatible(config.isHeadless());
 
         playwright = Playwright.create();
         BrowserType.LaunchOptions opts = new BrowserType.LaunchOptions()
                 .setHeadless(config.isHeadless())
                 .setSlowMo(config.getSlowMotionMs());
-        browser = playwright.chromium().launch(opts);
+        browser = selected.createBrowserType(playwright).launch(opts);
 
         context = browser.newContext(
                 new Browser.NewContextOptions()

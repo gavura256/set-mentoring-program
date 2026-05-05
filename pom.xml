@@ -453,7 +453,13 @@
                         </executions>
                         <configuration>
                             <executable>npx</executable>
-                            <arguments><argument>playwright</argument><argument>install</argument><argument>chromium</argument></arguments>
+                            <arguments>
+                                <argument>playwright</argument>
+                                <argument>install</argument>
+                                <argument>chromium</argument>
+                                <argument>firefox</argument>
+                                <argument>webkit</argument>
+                            </arguments>
                         </configuration>
                     </plugin>
                 </plugins>
