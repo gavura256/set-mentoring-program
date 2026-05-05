@@ -1,5 +1,6 @@
 package com.bookshop.ui.pages;
 
+import com.bookshop.ui.config.HashRoute;
 import com.microsoft.playwright.Page;
 import lombok.extern.slf4j.Slf4j;
 
@@ -9,7 +10,7 @@ public class LoginPage extends BasePage {
     private static final String EMAIL_SELECTOR    = "#l-email";
     private static final String PASSWORD_SELECTOR = "#l-password";
     private static final String SUBMIT_SELECTOR   = "button[type=\"submit\"]";
-    private static final String REGISTER_LINK     = "a[href=\"#/register\"]";
+    private static final String REGISTER_LINK     = "a[href=\"%s\"]".formatted(HashRoute.REGISTER);
 
     public LoginPage(Page page, String baseUrl) {
         super(page, baseUrl);
