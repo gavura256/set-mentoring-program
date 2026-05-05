@@ -30,6 +30,7 @@ public class BookingSteps {
     @And("the user cancels the most recent booking")
     public void theUserCancelsTheMostRecentBooking() {
         ctx.getBookingsPage().cancelLastBooking();
+        ctx.getBookingsPage().waitForActionComplete();
     }
 
     @Then("the available quantity of the first product should be decreased by {int}")

@@ -74,9 +74,7 @@ public class LoginSteps {
 
     @When("the user navigates directly to {string}")
     public void theUserNavigatesDirectlyTo(String hash) {
-        ctx.getPlaywrightManager().getPage().navigate(ctx.getConfig().getBaseUrl() + "/#" + hash);
-        ctx.getPlaywrightManager().getPage().waitForLoadState(
-                com.microsoft.playwright.options.LoadState.DOMCONTENTLOADED);
+        ctx.getLoginPage().navigateToHash(hash);
     }
 
     @Then("the login form should be displayed")

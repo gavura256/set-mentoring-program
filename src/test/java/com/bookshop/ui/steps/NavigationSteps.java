@@ -17,7 +17,7 @@ public class NavigationSteps {
     @When("the user navigates to the bookings page")
     public void theUserNavigatesToTheBookingsPage() {
         ctx.getNavbar().clickBookings();
-        ctx.getPlaywrightManager().getPage().waitForSelector("#bookings-body table");
+        ctx.getBookingsPage().waitForLoaded();
     }
 
     @Then("the bookings table should have at least one row")
@@ -32,11 +32,13 @@ public class NavigationSteps {
     @When("the user clicks the Logout button")
     public void theUserClicksTheLogoutButton() {
         ctx.getNavbar().clickLogout();
+        ctx.getLoginPage().waitForLoginForm();
     }
 
     @When("the user clicks the register link")
     public void theUserClicksTheRegisterLink() {
         ctx.getLoginPage().clickRegisterLink();
+        ctx.getRegistrationPage().waitForForm();
     }
 
     @Then("the registration form should be visible")

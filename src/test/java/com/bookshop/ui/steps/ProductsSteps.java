@@ -17,7 +17,7 @@ public class ProductsSteps {
     @When("the user navigates to the products page")
     public void theUserNavigatesToTheProductsPage() {
         ctx.getNavbar().clickProducts();
-        ctx.getPlaywrightManager().getPage().waitForSelector("#products-body table");
+        ctx.getProductsPage().waitForLoaded();
     }
 
     @Then("the products table should have at least one data row")
@@ -32,7 +32,7 @@ public class ProductsSteps {
     @When("the user clicks the first product row")
     public void theUserClicksTheFirstProductRow() {
         ctx.getProductsPage().clickFirstProductRow();
-        ctx.getPlaywrightManager().getPage().waitForSelector("#pd-body h3");
+        ctx.getProductDetailPage().waitForLoaded();
     }
 
     @Then("the product detail page should show a title and a price in dollar format")

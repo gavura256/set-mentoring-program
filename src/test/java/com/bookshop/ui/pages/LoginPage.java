@@ -41,4 +41,8 @@ public class LoginPage extends BasePage {
     public void clickRegisterLink() {
         click(REGISTER_LINK);
     }
+
+    public void waitForLoginForm() {
+        waitForSelector(EMAIL_SELECTOR);
+    }
 }
