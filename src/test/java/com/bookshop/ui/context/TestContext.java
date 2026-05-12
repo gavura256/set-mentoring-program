@@ -37,42 +37,65 @@ public class TestContext {
     private int notedQuantity;
 
     public LoginPage getLoginPage() {
-        if (loginPage == null) loginPage = new LoginPage(playwrightManager.getPage(), config.getBaseUrl());
+        if (loginPage == null) {
+            loginPage = new LoginPage(
+                    playwrightManager.getPage(), config.getBaseUrl());
+        }
         return loginPage;
     }
 
     public RegistrationPage getRegistrationPage() {
-        if (registrationPage == null) registrationPage = new RegistrationPage(playwrightManager.getPage(), config.getBaseUrl());
+        if (registrationPage == null) {
+            registrationPage = new RegistrationPage(
+                    playwrightManager.getPage(), config.getBaseUrl());
+        }
         return registrationPage;
     }
 
     public ProductsPage getProductsPage() {
-        if (productsPage == null) productsPage = new ProductsPage(playwrightManager.getPage(), config.getBaseUrl());
+        if (productsPage == null) {
+            productsPage = new ProductsPage(
+                    playwrightManager.getPage(), config.getBaseUrl());
+        }
         return productsPage;
     }
 
     public ProductDetailPage getProductDetailPage() {
-        if (productDetailPage == null) productDetailPage = new ProductDetailPage(playwrightManager.getPage(), config.getBaseUrl());
+        if (productDetailPage == null) {
+            productDetailPage = new ProductDetailPage(
+                    playwrightManager.getPage(), config.getBaseUrl());
+        }
         return productDetailPage;
     }
 
     public BookingsPage getBookingsPage() {
-        if (bookingsPage == null) bookingsPage = new BookingsPage(playwrightManager.getPage(), config.getBaseUrl());
+        if (bookingsPage == null) {
+            bookingsPage = new BookingsPage(
+                    playwrightManager.getPage(), config.getBaseUrl());
+        }
         return bookingsPage;
     }
 
     public BookingModal getBookingModal() {
-        if (bookingModal == null) bookingModal = new BookingModal(playwrightManager.getPage(), config.getBaseUrl());
+        if (bookingModal == null) {
+            bookingModal = new BookingModal(
+                    playwrightManager.getPage(), config.getBaseUrl());
+        }
         return bookingModal;
     }
 
     public UsersPage getUsersPage() {
-        if (usersPage == null) usersPage = new UsersPage(playwrightManager.getPage(), config.getBaseUrl());
+        if (usersPage == null) {
+            usersPage = new UsersPage(
+                    playwrightManager.getPage(), config.getBaseUrl());
+        }
         return usersPage;
     }
 
     public Navbar getNavbar() {
-        if (navbar == null) navbar = new Navbar(playwrightManager.getPage());
+        if (navbar == null) {
+            navbar = new Navbar(playwrightManager.getPage());
+        }
         return navbar;
     }
 }
