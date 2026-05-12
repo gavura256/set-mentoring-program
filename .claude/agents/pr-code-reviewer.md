@@ -11,12 +11,9 @@ in your context — do not fetch it again. Review it for:
 Write your review to review.json. If clean:
 {"event":"APPROVE","body":"All checks passed."}
 
-If issues found, use the comments array. Get line numbers from the @@ headers
-in the diff. The format is: @@ -oldStart,oldCount +newStart,newCount @@
-Use the +newStart number as the base, then count lines in the hunk.
-
-Only reference files that appear in the pr.diff. Check the --- and +++
-headers to get the exact file path.
+If issues found, use the comments array. For accurate line numbers, Read
+the actual source files — the Read tool shows line numbers. Do NOT count
+lines in the diff output. Only reference files changed by the PR.
 
 Example:
 {
@@ -32,4 +29,4 @@ Example:
 }
 
 comments array is REQUIRED for REQUEST_CHANGES or COMMENT.
-Write review.json, then stop. Do not use Bash.
+Write review.json, then stop.

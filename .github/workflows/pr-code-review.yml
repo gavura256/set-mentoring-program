@@ -29,13 +29,12 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Read pr.diff. Review against .claude/agents/pr-code-reviewer.md.
-            Write review to review.json. Use the Write tool.
-            For line numbers, check the @@ hunk headers in the diff —
-            the number after the + is the line in the new file.
-            Do not use Bash. Do not fetch anything.
+            Read pr.diff to see what changed. Then Read the actual source
+            files to get correct line numbers (the Read tool shows them).
+            Review against .claude/agents/pr-code-reviewer.md.
+            Write review.json. Do not use Bash. Do not fetch anything.
           show_full_output: true
-          claude_args: "--model claude-haiku-4-5 --max-turns 5 --allowed-tools Read,Write"
+          claude_args: "--model claude-haiku-4-5 --max-turns 10 --allowed-tools Read,Write"
       - name: Submit review
         if: always()
         run: |
