@@ -33,12 +33,9 @@ jobs:
             - Bash(cat:*)
             - Read
           prompt: |
-            Review this PR diff as defined in .claude/agents/pr-code-reviewer.md.
-            First load credentials from workspace files:
-              export GH_TOKEN=$(cat .gh_token)
-              export PR_NUMBER=$(cat .pr_number)
-              export REPO_OWNER=$(cat .repo_owner)
-              export REPO_NAME=$(cat .repo_name)
-            Then execute the review command. Do not stop at describing findings.
+            Review this PR as defined in .claude/agents/pr-code-reviewer.md.
+            The diff is already provided — do not fetch it again.
+            To submit: export GH_TOKEN=$(cat .gh_token) PR_NUMBER=$(cat .pr_number)
+            then run gh pr review. Execute the command, do not just describe it.
           show_full_output: true
           claude_args: "--model claude-haiku-4-5"
