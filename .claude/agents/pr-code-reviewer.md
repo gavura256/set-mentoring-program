@@ -20,25 +20,32 @@ For each issue found:
 
 ## Submitting Your Review
 
+First, load credentials from files:
+```
+export GH_TOKEN=$(cat /tmp/gh_token)
+export PR_NUMBER=$(cat /tmp/pr_number)
+export REPO_OWNER=$(cat /tmp/repo_owner)
+export REPO_NAME=$(cat /tmp/repo_name)
+```
+
 If APPROVE (no issues found):
 ```
-gh pr review $PR_NUMBER --approve --body "All checks passed. No issues found."
+gh pr review $PR_NUMBER --approve \
+  --repo $REPO_OWNER/$REPO_NAME \
+  --body "All checks passed. No issues found."
 ```
 
-If issues found, post inline comments on specific lines using the GitHub API:
-
-1. First get the HEAD commit: `HEAD_SHA=$(git rev-parse HEAD)`
-2. Then submit with inline comments:
+If issues found, post inline comments on specific lines:
 ```
+HEAD_SHA=$(git rev-parse HEAD)
 gh api repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/reviews \
   --input - <<'EOF'
 {
   "commit_id": "FILL_HEAD_SHA",
-  "body": "Summary of findings...",
+  "body": "Summary...",
   "event": "REQUEST_CHANGES",
   "comments": [
-    {"path": "src/main/java/com/bookshop/Foo.java", "line": 42, "body": "..."},
-    {"path": "src/test/java/com/bookshop/BarTest.java", "line": 15, "body": "..."}
+    {"path": "src/main/java/com/bookshop/Foo.java", "line": 42, "body": "..."}
   ]
 }
 EOF

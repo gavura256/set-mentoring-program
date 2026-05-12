@@ -16,24 +16,24 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+      - name: Setup review environment
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" > /tmp/gh_token
+          echo "${{ github.event.pull_request.number }}" > /tmp/pr_number
+          echo "${{ github.repository_owner }}" > /tmp/repo_owner
+          echo "${{ github.event.repository.name }}" > /tmp/repo_name
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          settings: |
-            {
-              "env": {
-                "GH_TOKEN": "${{ secrets.GITHUB_TOKEN }}",
-                "GITHUB_TOKEN": "${{ secrets.GITHUB_TOKEN }}",
-                "PR_NUMBER": "${{ github.event.pull_request.number }}",
-                "REPO_OWNER": "${{ github.repository_owner }}",
-                "REPO_NAME": "${{ github.event.repository.name }}"
-              }
-            }
           prompt: |
             Review this PR diff as defined in .claude/agents/pr-code-reviewer.md.
-            PR_NUMBER, REPO_OWNER, and REPO_NAME are in your environment.
-            You must execute the final review command — do not stop at
+            Before running review commands, read:
+              GH_TOKEN from /tmp/gh_token
+              PR_NUMBER from /tmp/pr_number
+              REPO_OWNER from /tmp/repo_owner
+              REPO_NAME from /tmp/repo_name
+            Export them and execute the review command. Do not stop at
             describing what you found.
           show_full_output: true
           claude_args: "--model claude-haiku-4-5"
