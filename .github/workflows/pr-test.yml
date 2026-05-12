@@ -49,3 +49,21 @@ jobs:
         with:
           name: jacoco-report
           path: target/site/jacoco/
+
+  review:
+    needs: test
+    if: always() && needs.test.result != 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Review this PR diff as defined in .claude/agents/pr-code-reviewer.md.
+            Submit your review — APPROVE if clean, REQUEST CHANGES if issues found.
+          claude_args: "--model claude-haiku-4-5"
