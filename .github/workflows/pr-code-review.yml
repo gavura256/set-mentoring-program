@@ -16,37 +16,43 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Prepare PR context
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr diff ${{ github.event.pull_request.number }} > pr.diff
+          git diff origin/${{ github.event.pull_request.base.ref }}...HEAD > pr.diff
+          echo "${{ github.event.pull_request.head.sha }}" > .head_sha
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Read pr.diff. Review it against .claude/agents/pr-code-reviewer.md.
-            Write your review to review.json using the Write tool.
-            For issues, include inline comments with path, line, and body.
+            Read pr.diff. Review against .claude/agents/pr-code-reviewer.md.
+            Write review to review.json. Use the Write tool.
+            For line numbers, check the @@ hunk headers in the diff —
+            the number after the + is the line in the new file.
             Do not use Bash. Do not fetch anything.
           show_full_output: true
           claude_args: "--model claude-haiku-4-5 --max-turns 5 --allowed-tools Read,Write"
       - name: Submit review
         if: always()
         run: |
-          if [ -f review.json ]; then
-            echo "=== review.json contents ==="
-            cat review.json
-            echo ""
-            echo "=== curl response ==="
+          if [ -f review.json ] && [ -f .head_sha ]; then
+            SHA=$(cat .head_sha)
+            REVIEW=$(cat review.json)
+            BODY=$(echo "$REVIEW" | jq '{event, body, comments}' | jq --arg sha "$SHA" '. + {commit_id: $sha}')
+            echo "=== Merged payload ==="
+            echo "$BODY" | jq .
+            echo "=== API response ==="
             curl -s -w "\nHTTP %{http_code}" -X POST \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews" \
-              -d "$(cat review.json)"
+              -d "$BODY"
             echo ""
           else
-            echo "review.json not found"
-            ls -la
+            echo "review.json or .head_sha not found"
+            ls -la review.json .head_sha 2>/dev/null || true
           fi
