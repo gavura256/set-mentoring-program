@@ -185,6 +185,28 @@ class ProductServiceTest {
     }
 
     @Test
+    void searchByTitle_returnsMatchingProducts() {
+        when(productRepository.findByTitleContainingIgnoreCase("Clean"))
+                .thenReturn(List.of(product));
+        when(productMapper.toDto(product)).thenReturn(productDto);
+
+        List<ProductDto> result = productService.searchByTitle("Clean");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.getFirst().getTitle()).isEqualTo("Clean Code");
+    }
+
+    @Test
+    void searchByTitle_noMatch_returnsEmptyList() {
+        when(productRepository.findByTitleContainingIgnoreCase("Nonexistent"))
+                .thenReturn(List.of());
+
+        List<ProductDto> result = productService.searchByTitle("Nonexistent");
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     void delete_productWithBookings_throwsInvalidOperationException() {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
         when(bookingRepository.existsByProductId(1L)).thenReturn(true);
