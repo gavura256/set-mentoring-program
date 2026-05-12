@@ -19,44 +19,36 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Prepare PR context
+      - name: Prepare PR diff
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BASE=${{ github.event.pull_request.base.sha }}
           HEAD=${{ github.event.pull_request.head.sha }}
           git diff ${BASE}..${HEAD} > pr.diff
-          git diff --name-only ${BASE}..${HEAD} > pr.changed
-          echo "$HEAD" > .head_sha
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Read pr.diff to see what changed. Read pr.changed for the file
-            list, then Read each changed source file individually — the
-            Read tool shows accurate per-file line numbers. Review against
-            .claude/agents/pr-code-reviewer.md. Write review.json.
+            Read pr.diff. Review against .claude/agents/pr-code-reviewer.md.
+            Write review.txt. First line: approve or request_changes.
+            Remaining lines: your review body.
             Do not use Bash. Do not fetch anything.
           show_full_output: true
-          claude_args: "--model claude-haiku-4-5 --max-turns 10 --allowed-tools Read,Write"
+          claude_args: "--model claude-haiku-4-5 --max-turns 5 --allowed-tools Read,Write"
       - name: Submit review
         if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f review.json ]; then
-            REVIEW=$(cat review.json)
-            SHA=$(cat .head_sha)
-            BODY=$(echo "$REVIEW" | jq --arg sha "$SHA" \
-              '{event, body} + if .comments then {comments, commit_id: $sha} else {} end')
-            echo "=== Payload ==="
-            echo "$BODY" | jq .
-            echo "=== API response ==="
-            curl -s -w "\nHTTP %{http_code}" -X POST \
-              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews" \
-              -d "$BODY"
-            echo ""
+          if [ -f review.txt ]; then
+            EVENT=$(head -1 review.txt | tr '[:upper:]' '[:lower:]')
+            tail -n +3 review.txt > review-body.txt
+            echo "=== Event: $EVENT ==="
+            cat review-body.txt
+            gh pr review ${{ github.event.pull_request.number }} \
+              --${EVENT} --body-file review-body.txt
           else
-            echo "review.json not found"
+            echo "review.txt not found"
           fi
