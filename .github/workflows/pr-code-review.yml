@@ -41,7 +41,8 @@ jobs:
           if [ -f review.json ] && [ -f .head_sha ]; then
             SHA=$(cat .head_sha)
             REVIEW=$(cat review.json)
-            BODY=$(echo "$REVIEW" | jq '{event, body, comments}' | jq --arg sha "$SHA" '. + {commit_id: $sha}')
+            BODY=$(echo "$REVIEW" | jq --arg sha "$SHA" \
+              '{event, body, commit_id: $sha} + if .comments then {comments} else {} end')
             echo "=== Merged payload ==="
             echo "$BODY" | jq .
             echo "=== API response ==="
