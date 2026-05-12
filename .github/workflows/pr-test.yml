@@ -2,7 +2,6 @@ name: Testing Pipeline
 
 on:
   pull_request:
-    branches: [main]
     types: [opened, synchronize, reopened]
 
 concurrency:
