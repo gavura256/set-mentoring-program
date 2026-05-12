@@ -11,6 +11,8 @@ concurrency:
 jobs:
   pr-code-review:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
       contents: read
       pull-requests: write
