@@ -21,28 +21,29 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr diff ${{ github.event.pull_request.number }} > pr.diff
-          echo "PR_NUMBER=${{ github.event.pull_request.number }}" > .pr_env
-          echo "REPO=${{ github.repository }}" >> .pr_env
-          echo "TOKEN=${{ secrets.GITHUB_TOKEN }}" >> .pr_env
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          additional_permissions: |
-            - Bash
-            - Read
           prompt: |
             Read pr.diff — review it against .claude/agents/pr-code-reviewer.md.
 
-            Then source .pr_env and submit inline with curl:
-              source .pr_env
-              curl -X POST \
-                -H "Authorization: Bearer $TOKEN" \
-                -H "Accept: application/vnd.github+json" \
-                "https://api.github.com/repos/$REPO/pulls/$PR_NUMBER/reviews" \
-                -d '{"event":"APPROVE","body":"...your review here..."}'
+            Write your review to review.json in this format:
+            {"event":"APPROVE","body":"your review text"}
 
-            Use REQUEST_CHANGES if issues found. Execute the curl, do not
-            stop at describing findings. Do not use script files.
+            Use REQUEST_CHANGES instead of APPROVE if issues found.
+            Use the Write tool. Do not use Bash. Do not fetch anything.
           show_full_output: true
-          claude_args: "--model claude-haiku-4-5 --max-turns 5"
+          claude_args: "--model claude-haiku-4-5 --max-turns 5 --allowed-tools Read,Write"
+      - name: Submit review
+        if: always()
+        run: |
+          if [ -f review.json ]; then
+            curl -s -X POST \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews" \
+              -d "$(cat review.json)"
+          else
+            echo "review.json not found — Claude did not produce a review"
+          fi
