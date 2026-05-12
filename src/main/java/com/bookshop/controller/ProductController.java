@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.bookshop.dto.validation.OnCreate;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.groups.Default;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -31,6 +32,7 @@ import org.springframework.validation.annotation.Validated;
 @RestController
 @RequestMapping(ApiRoutes.PRODUCTS)
 @Tag(name = "Products")
+@Validated
 public class ProductController {
 
     @Autowired
@@ -73,7 +75,7 @@ public class ProductController {
 
     @GetMapping("/search")
     @Operation(summary = "Search products by title")
-    public List<ProductDto> searchByTitle(@RequestParam String title) {
+    public List<ProductDto> searchByTitle(@RequestParam @NotBlank String title) {
         return productService.searchByTitle(title);
     }
 }
