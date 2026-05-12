@@ -99,14 +99,18 @@ public class PlaywrightManager {
 
     private void closeSilently(AutoCloseable resource) {
         if (resource != null) {
-            try { resource.close(); } catch (Exception e) {
+            try {
+                resource.close();
+            } catch (Exception e) {
                 log.warn("Error closing resource: {}", e.getMessage());
             }
         }
     }
 
     private void ensureDir(Path dir) {
-        try { Files.createDirectories(dir); } catch (Exception e) {
+        try {
+            Files.createDirectories(dir);
+        } catch (Exception e) {
             log.warn("Could not create directory {}: {}", dir, e.getMessage());
         }
     }

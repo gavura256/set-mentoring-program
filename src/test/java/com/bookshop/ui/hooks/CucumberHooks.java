@@ -43,7 +43,9 @@ public class CucumberHooks {
     @After
     public void tearDown(Scenario scenario) {
         String safeName = scenario.getName().replaceAll(UNSAFE_CHARS, "_");
-        if (safeName.length() > MAX_NAME_LENGTH) safeName = safeName.substring(0, MAX_NAME_LENGTH);
+        if (safeName.length() > MAX_NAME_LENGTH) {
+            safeName = safeName.substring(0, MAX_NAME_LENGTH);
+        }
 
         ctx.getPlaywrightManager().stopTrace(safeName);
 
