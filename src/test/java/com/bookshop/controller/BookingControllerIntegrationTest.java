@@ -288,6 +288,19 @@ class BookingControllerIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     @WithMockUser(roles = "MANAGER")
+    void create_missingProductId_returnsBadRequest() throws Exception {
+        BookingDto dto = BookingDto.builder()
+                .userId(userId)
+                .quantity(1)
+                .build();
+        mockMvc.perform(post(ApiRoutes.BOOKINGS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @WithMockUser(roles = "MANAGER")
     void create_zeroQuantity_returnsBadRequest() throws Exception {
         BookingDto dto = BookingDto.builder()
                 .userId(userId)
