@@ -23,9 +23,11 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
+            PR number: ${{ github.event.pull_request.number }}
+
             Review this PR diff as defined in .claude/agents/pr-code-reviewer.md.
-            Submit your review via the GitHub API — APPROVE if clean,
-            REQUEST CHANGES if issues found. You must submit the review,
-            do not just describe what you would do.
+            Your final action must execute the gh pr review command —
+            APPROVE if clean, REQUEST CHANGES if issues found.
+            Do not stop at describing what you found.
           show_full_output: true
           claude_args: "--model claude-haiku-4-5"
