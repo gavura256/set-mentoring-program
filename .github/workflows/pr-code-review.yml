@@ -32,7 +32,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             Read pr.diff. Review against .claude/agents/pr-code-reviewer.md.
-            Write review.txt. First line: approve or request_changes.
+            Write review.txt. First line: approve or request-changes.
             Remaining lines: your review body.
             Do not use Bash. Do not fetch anything.
           show_full_output: true
@@ -43,7 +43,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -f review.txt ]; then
-            EVENT=$(head -1 review.txt | tr '[:upper:]' '[:lower:]')
+            EVENT=$(head -1 review.txt | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
             tail -n +3 review.txt > review-body.txt
             echo "=== Event: $EVENT ==="
             cat review-body.txt
