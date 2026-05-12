@@ -15,7 +15,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Override transitive commons-compress to fix CVE-2024-25710 and CVE-2024-26308 (fixed in 1.26.0+) -->
+            <!-- Override transitive commons-compress to 1.28.0 to fix CVE-2024-25710 and CVE-2024-26308 -->
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
