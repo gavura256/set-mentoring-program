@@ -10,6 +10,7 @@ import com.bookshop.repository.BookingRepository;
 import com.bookshop.repository.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -76,6 +77,15 @@ public class ProductService {
         Product saved = productRepository.save(product);
         log.info("Product updated, productId: {}", saved.getId());
         return productMapper.toDto(saved);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductDto> searchByTitle(String title) {
+        log.debug("Searching products by title containing: '{}'", title);
+        return productRepository.findByTitleContainingIgnoreCase(title)
+                .stream()
+                .map(productMapper::toDto)
+                .toList();
     }
 
     @Transactional
