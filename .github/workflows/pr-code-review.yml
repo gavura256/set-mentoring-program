@@ -18,22 +18,27 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup review environment
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" > /tmp/gh_token
-          echo "${{ github.event.pull_request.number }}" > /tmp/pr_number
-          echo "${{ github.repository_owner }}" > /tmp/repo_owner
-          echo "${{ github.event.repository.name }}" > /tmp/repo_name
+          echo "${{ secrets.GITHUB_TOKEN }}" > .gh_token
+          echo "${{ github.event.pull_request.number }}" > .pr_number
+          echo "${{ github.repository_owner }}" > .repo_owner
+          echo "${{ github.event.repository.name }}" > .repo_name
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          additional_permissions: |
+            - Bash(gh pr:*)
+            - Bash(gh api:*)
+            - Bash(git:*)
+            - Bash(cat:*)
+            - Read
           prompt: |
             Review this PR diff as defined in .claude/agents/pr-code-reviewer.md.
-            Before running review commands, read:
-              GH_TOKEN from /tmp/gh_token
-              PR_NUMBER from /tmp/pr_number
-              REPO_OWNER from /tmp/repo_owner
-              REPO_NAME from /tmp/repo_name
-            Export them and execute the review command. Do not stop at
-            describing what you found.
+            First load credentials from workspace files:
+              export GH_TOKEN=$(cat .gh_token)
+              export PR_NUMBER=$(cat .pr_number)
+              export REPO_OWNER=$(cat .repo_owner)
+              export REPO_NAME=$(cat .repo_name)
+            Then execute the review command. Do not stop at describing findings.
           show_full_output: true
           claude_args: "--model claude-haiku-4-5"
