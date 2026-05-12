@@ -20,12 +20,12 @@ For each issue found:
 
 ## Submitting Your Review
 
-First, load credentials from files:
+First, load credentials from workspace files:
 ```
-export GH_TOKEN=$(cat /tmp/gh_token)
-export PR_NUMBER=$(cat /tmp/pr_number)
-export REPO_OWNER=$(cat /tmp/repo_owner)
-export REPO_NAME=$(cat /tmp/repo_name)
+export GH_TOKEN=$(cat .gh_token)
+export PR_NUMBER=$(cat .pr_number)
+export REPO_OWNER=$(cat .repo_owner)
+export REPO_NAME=$(cat .repo_name)
 ```
 
 If APPROVE (no issues found):
