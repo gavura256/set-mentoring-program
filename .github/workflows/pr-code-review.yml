@@ -23,7 +23,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git diff ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} > pr.diff
-          echo "${{ github.event.pull_request.head.sha }}" > .head_sha
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -38,11 +37,10 @@ jobs:
       - name: Submit review
         if: always()
         run: |
-          if [ -f review.json ] && [ -f .head_sha ]; then
-            SHA=$(cat .head_sha)
+          if [ -f review.json ]; then
             REVIEW=$(cat review.json)
-            BODY=$(echo "$REVIEW" | jq --arg sha "$SHA" \
-              '{event, body, commit_id: $sha} + if .comments then {comments} else {} end')
+            BODY=$(echo "$REVIEW" | jq \
+              '{event, body} + if .comments then {comments} else {} end')
             echo "=== Merged payload ==="
             echo "$BODY" | jq .
             echo "=== API response ==="
@@ -53,6 +51,6 @@ jobs:
               -d "$BODY"
             echo ""
           else
-            echo "review.json or .head_sha not found"
-            ls -la review.json .head_sha 2>/dev/null || true
+            echo "review.json not found"
+            ls -la review.json 2>/dev/null || true
           fi
