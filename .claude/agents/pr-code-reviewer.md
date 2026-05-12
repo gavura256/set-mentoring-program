@@ -8,20 +8,31 @@ in your context — do not fetch it again. Review it for:
 5. Over-engineering — unnecessary abstractions, dead code, commented-out blocks
 6. Inconsistent error handling — uncaught exceptions, swallowed errors
 
-Write your review to review.json using the Write tool.
-
-If APPROVE (no issues):
+Write your review to review.json. If the PR is clean, use:
 {"event":"APPROVE","body":"All checks passed."}
 
-If issues found, include inline comments for each issue:
+If issues found, you MUST use the comments array. Each issue goes as its own
+object in the comments array with path, line, and body. The body field is
+only for a one-sentence summary. Do NOT put issue details in body.
+
+Example with two issues:
 {
   "event":"REQUEST_CHANGES",
-  "body":"Summary of findings",
+  "body":"Found 2 issues requiring changes.",
   "comments":[
-    {"path":"src/main/java/com/bookshop/controller/Example.java","line":40,"body":"Issue description and suggested fix"},
-    {"path":"src/test/...","line":15,"body":"Another issue"}
+    {
+      "path":"src/main/java/com/bookshop/controller/ProductController.java",
+      "line":41,
+      "body":"N-tier violation: ProductRepository injected directly into controller. Move to ProductService."
+    },
+    {
+      "path":"src/test/java/com/bookshop/controller/ProductControllerTest.java",
+      "line":15,
+      "body":"Missing test for the new searchByTitle endpoint."
+    }
   ]
 }
 
-Each comment must have the exact file path, line number, and a clear body.
-Do not use Bash. Write the file, then stop.
+The comments array is REQUIRED when event is REQUEST_CHANGES or COMMENT.
+Every comment must have path, line, and body fields. Use the Write tool.
+Do not use Bash. Write review.json, then stop.
