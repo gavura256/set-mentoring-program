@@ -2,7 +2,8 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [ opened, synchronize ]
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
 
 concurrency:
   group: pr-review-${{ github.event.pull_request.number }}

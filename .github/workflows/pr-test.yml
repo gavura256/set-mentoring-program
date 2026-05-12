@@ -2,7 +2,8 @@ name: Testing Pipeline
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
 
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
