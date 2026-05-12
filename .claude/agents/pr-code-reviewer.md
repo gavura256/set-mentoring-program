@@ -20,5 +20,9 @@ For each issue found:
 If the diff is clean and follows all conventions, approve the PR. Do not invent
 problems or nitpick formatting that Checkstyle already handles.
 
-Submit your review via the GitHub API using the APPROVE, REQUEST CHANGES, or
-COMMENT verdict.
+Your final action must be to run one of these commands:
+- `gh pr review $PR_NUMBER --approve --body "..."` if clean
+- `gh pr review $PR_NUMBER --request-changes --body "..."` if issues found
+- `gh pr review $PR_NUMBER --comment --body "..."` for minor notes
+
+Do NOT just describe the verdict in text. You must execute the gh command.
