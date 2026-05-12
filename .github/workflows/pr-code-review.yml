@@ -16,8 +16,11 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - name: Create review submission script and token file
+      - name: Prepare PR context
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          gh pr diff ${{ github.event.pull_request.number }} > pr.diff
           echo "${{ secrets.GITHUB_TOKEN }}" > .review_token
           echo "${{ github.event.pull_request.number }}" > .pr_number
           cat > submit_review.sh << 'SCRIPT'
@@ -26,11 +29,10 @@ jobs:
           PR=$(cat .pr_number)
           EVENT="$1"
           BODY="$2"
-          REPO="${{ github.repository }}"
           curl -s -X POST \
             -H "Authorization: Bearer $TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/$REPO/pulls/$PR/reviews" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR/reviews" \
             -d "$(jq -n --arg event "$EVENT" --arg body "$BODY" '{event: $event, body: $body}')"
           SCRIPT
           chmod +x submit_review.sh
@@ -39,11 +41,12 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Review this PR diff as defined in .claude/agents/pr-code-reviewer.md.
+            Read pr.diff — it contains the full PR diff. Review it against
+            the criteria in .claude/agents/pr-code-reviewer.md.
 
-            To submit: bash submit_review.sh APPROVE "your review body"
+            Then submit: bash submit_review.sh APPROVE "your review"
             Use REQUEST_CHANGES instead of APPROVE if issues found.
 
-            You must execute this command. Do not stop at describing findings.
+            Do not fetch anything. Read pr.diff, review, submit. Done.
           show_full_output: true
-          claude_args: "--model claude-haiku-4-5"
+          claude_args: "--model claude-haiku-4-5 --max-turns 5"
