@@ -15,7 +15,7 @@ All checks passed.
 
 Or if issues found:
 ```
-request_changes
+request-changes
 ### Issue 1 — N-tier violation
 **File:** src/main/java/com/bookshop/controller/ProductController.java, line 41
 ...
