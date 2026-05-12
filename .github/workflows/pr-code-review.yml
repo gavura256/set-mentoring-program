@@ -17,12 +17,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - name: Prepare PR context
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git diff origin/${{ github.event.pull_request.base.ref }}...HEAD > pr.diff
+          git diff ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} > pr.diff
           echo "${{ github.event.pull_request.head.sha }}" > .head_sha
       - uses: anthropics/claude-code-action@v1
         with:
