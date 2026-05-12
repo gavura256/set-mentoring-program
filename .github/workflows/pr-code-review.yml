@@ -27,6 +27,7 @@ jobs:
           HEAD=${{ github.event.pull_request.head.sha }}
           git diff ${BASE}..${HEAD} > pr.diff
           git diff --name-only ${BASE}..${HEAD} > pr.changed
+          echo "$HEAD" > .head_sha
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -44,8 +45,9 @@ jobs:
         run: |
           if [ -f review.json ]; then
             REVIEW=$(cat review.json)
-            BODY=$(echo "$REVIEW" | jq \
-              '{event, body} + if .comments then {comments} else {} end')
+            SHA=$(cat .head_sha)
+            BODY=$(echo "$REVIEW" | jq --arg sha "$SHA" \
+              '{event, body} + if .comments then {comments, commit_id: $sha} else {} end')
             echo "=== Payload ==="
             echo "$BODY" | jq .
             echo "=== API response ==="
