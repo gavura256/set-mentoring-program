@@ -16,26 +16,9 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - name: Setup review environment
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" > .gh_token
-          echo "${{ github.event.pull_request.number }}" > .pr_number
-          echo "${{ github.repository_owner }}" > .repo_owner
-          echo "${{ github.event.repository.name }}" > .repo_name
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          additional_permissions: |
-            - Bash(gh pr:*)
-            - Bash(gh api:*)
-            - Bash(git:*)
-            - Bash(cat:*)
-            - Read
-          prompt: |
-            Review this PR as defined in .claude/agents/pr-code-reviewer.md.
-            The diff is already provided — do not fetch it again.
-            To submit: export GH_TOKEN=$(cat .gh_token) PR_NUMBER=$(cat .pr_number)
-            then run gh pr review. Execute the command, do not just describe it.
           show_full_output: true
           claude_args: "--model claude-haiku-4-5"
