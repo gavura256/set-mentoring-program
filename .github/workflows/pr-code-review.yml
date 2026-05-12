@@ -26,13 +26,10 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Read pr.diff — review it against .claude/agents/pr-code-reviewer.md.
-
-            Write your review to review.json in this format:
-            {"event":"APPROVE","body":"your review text"}
-
-            Use REQUEST_CHANGES instead of APPROVE if issues found.
-            Use the Write tool. Do not use Bash. Do not fetch anything.
+            Read pr.diff. Review it against .claude/agents/pr-code-reviewer.md.
+            Write your review to review.json using the Write tool.
+            For issues, include inline comments with path, line, and body.
+            Do not use Bash. Do not fetch anything.
           show_full_output: true
           claude_args: "--model claude-haiku-4-5 --max-turns 5 --allowed-tools Read,Write"
       - name: Submit review
