@@ -8,17 +8,20 @@ in your context — do not fetch it again. Review it for:
 5. Over-engineering — unnecessary abstractions, dead code, commented-out blocks
 6. Inconsistent error handling — uncaught exceptions, swallowed errors
 
-For each issue, cite the file path and line number.
+Write your review to review.json using the Write tool.
 
-To submit your review, load the token and PR number from workspace files,
-then run the exact command:
+If APPROVE (no issues):
+{"event":"APPROVE","body":"All checks passed."}
 
-```
-export GH_TOKEN=$(cat .gh_token)
-export PR_NUMBER=$(cat .pr_number)
-gh pr review $PR_NUMBER --approve --body "..."   # if clean
-gh pr review $PR_NUMBER --request-changes --body "..."  # if issues found
-```
+If issues found, include inline comments for each issue:
+{
+  "event":"REQUEST_CHANGES",
+  "body":"Summary of findings",
+  "comments":[
+    {"path":"src/main/java/com/bookshop/controller/Example.java","line":40,"body":"Issue description and suggested fix"},
+    {"path":"src/test/...","line":15,"body":"Another issue"}
+  ]
+}
 
-Do not run gh pr view or gh pr diff. The diff is already here. Just review
-it and execute the submit command. Do not stop at describing findings.
+Each comment must have the exact file path, line number, and a clear body.
+Do not use Bash. Write the file, then stop.
