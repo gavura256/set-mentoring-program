@@ -287,6 +287,37 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void searchByTitle_returnsMatchingProducts() throws Exception {
+        ProductDto dto = ProductDto.builder()
+                .title("Unique Search Book")
+                .author("Search Author")
+                .price(new BigDecimal("9.99"))
+                .quantity(5)
+                .build();
+
+        mockMvc.perform(post(ApiRoutes.PRODUCTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonUtils.toJson(dto))
+                        .with(user("manager").roles("MANAGER")))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/search")
+                        .param("title", "Unique Search"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title").value("Unique Search Book"));
+    }
+
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void searchByTitle_noMatch_returnsEmptyList() throws Exception {
+        mockMvc.perform(get(ApiRoutes.PRODUCTS + "/search")
+                        .param("title", "NonexistentTitle12345"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
     @WithMockUser(roles = "ADMINISTRATOR")
     void delete_existingProduct_returnsNoContent() throws Exception {
         ProductDto dto = ProductDto.builder()

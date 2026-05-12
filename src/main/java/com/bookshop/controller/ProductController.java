@@ -1,8 +1,6 @@
 package com.bookshop.controller;
 
 import com.bookshop.dto.ProductDto;
-import com.bookshop.model.Product;
-import com.bookshop.repository.ProductRepository;
 import com.bookshop.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bookshop.dto.validation.OnCreate;
 import jakarta.validation.Valid;
 import jakarta.validation.groups.Default;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -36,9 +35,6 @@ public class ProductController {
 
     @Autowired
     private ProductService productService;
-
-    @Autowired
-    private ProductRepository productRepository;
 
     @GetMapping
     @Operation(summary = "Get all products")
@@ -77,7 +73,7 @@ public class ProductController {
 
     @GetMapping("/search")
     @Operation(summary = "Search products by title")
-    public java.util.List<Product> searchByTitle(@RequestParam String title) {
-        return productRepository.findByTitleContainingIgnoreCase(title);
+    public List<ProductDto> searchByTitle(@RequestParam String title) {
+        return productService.searchByTitle(title);
     }
 }
