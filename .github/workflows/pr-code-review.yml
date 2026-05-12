@@ -25,7 +25,7 @@ jobs:
         run: |
           BASE=${{ github.event.pull_request.base.sha }}
           HEAD=${{ github.event.pull_request.head.sha }}
-          git diff ${BASE}..${HEAD} > pr.diff
+          git diff ${BASE}..${HEAD} -- '*.java' '*.xml' '*.yml' '*.yaml' '*.properties' > pr.diff
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -36,7 +36,7 @@ jobs:
             Remaining lines: your review body.
             Do not use Bash. Do not fetch anything.
           show_full_output: true
-          claude_args: "--model claude-haiku-4-5 --max-turns 10 --allowed-tools Read,Write"
+          claude_args: "--model claude-sonnet-4-6 --max-turns 20 --allowed-tools Read,Write"
       - name: Submit review
         if: always()
         env:
