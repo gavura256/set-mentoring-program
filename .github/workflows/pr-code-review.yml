@@ -25,26 +25,16 @@ jobs:
         run: |
           BASE=${{ github.event.pull_request.base.sha }}
           HEAD=${{ github.event.pull_request.head.sha }}
-
-          # Diff for review context
           git diff ${BASE}..${HEAD} > pr.diff
-
-          # Full files with line numbers for accurate inline comments
-          echo "=== CHANGED FILES WITH LINE NUMBERS ===" > pr.files
-          for f in $(git diff --name-only ${BASE}..${HEAD}); do
-            if [ -f "$f" ]; then
-              echo "" >> pr.files
-              echo "=== $f ===" >> pr.files
-              cat -n "$f" >> pr.files
-            fi
-          done
+          git diff --name-only ${BASE}..${HEAD} > pr.changed
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Read pr.diff to see what changed. Read pr.files to get accurate
-            line numbers for inline comments. Review against
+            Read pr.diff to see what changed. Read pr.changed for the file
+            list, then Read each changed source file individually — the
+            Read tool shows accurate per-file line numbers. Review against
             .claude/agents/pr-code-reviewer.md. Write review.json.
             Do not use Bash. Do not fetch anything.
           show_full_output: true
