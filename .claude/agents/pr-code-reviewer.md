@@ -13,16 +13,38 @@ Review the diff for:
 
 For each issue found:
 
-- State the problem clearly with the file path
+- Identify the exact file path and line number
+- State the problem clearly
 - Explain the risk if not addressed
 - Suggest a concrete fix
 
-If the diff is clean and follows all conventions, approve the PR. Do not invent
-problems or nitpick formatting that Checkstyle already handles.
+## Submitting Your Review
 
-Your final action must be to run one of these commands:
-- `gh pr review $PR_NUMBER --approve --body "..."` if clean
-- `gh pr review $PR_NUMBER --request-changes --body "..."` if issues found
-- `gh pr review $PR_NUMBER --comment --body "..."` for minor notes
+If APPROVE (no issues found):
+```
+gh pr review $PR_NUMBER --approve --body "All checks passed. No issues found."
+```
 
-Do NOT just describe the verdict in text. You must execute the gh command.
+If issues found, post inline comments on specific lines using the GitHub API:
+
+1. First get the HEAD commit: `HEAD_SHA=$(git rev-parse HEAD)`
+2. Then submit with inline comments:
+```
+gh api repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/reviews \
+  --input - <<'EOF'
+{
+  "commit_id": "FILL_HEAD_SHA",
+  "body": "Summary of findings...",
+  "event": "REQUEST_CHANGES",
+  "comments": [
+    {"path": "src/main/java/com/bookshop/Foo.java", "line": 42, "body": "..."},
+    {"path": "src/test/java/com/bookshop/BarTest.java", "line": 15, "body": "..."}
+  ]
+}
+EOF
+```
+
+Each comment must include the exact file path and line number. Do not invent
+problems or nitpick formatting that Checkstyle already handles. If the diff
+is clean, approve it. Do NOT stop at describing findings — you must execute
+the final review command.
