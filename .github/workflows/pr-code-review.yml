@@ -22,16 +22,30 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git diff ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} > pr.diff
+          BASE=${{ github.event.pull_request.base.sha }}
+          HEAD=${{ github.event.pull_request.head.sha }}
+
+          # Diff for review context
+          git diff ${BASE}..${HEAD} > pr.diff
+
+          # Full files with line numbers for accurate inline comments
+          echo "=== CHANGED FILES WITH LINE NUMBERS ===" > pr.files
+          for f in $(git diff --name-only ${BASE}..${HEAD}); do
+            if [ -f "$f" ]; then
+              echo "" >> pr.files
+              echo "=== $f ===" >> pr.files
+              cat -n "$f" >> pr.files
+            fi
+          done
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
-            Read pr.diff to see what changed. Then Read the actual source
-            files to get correct line numbers (the Read tool shows them).
-            Review against .claude/agents/pr-code-reviewer.md.
-            Write review.json. Do not use Bash. Do not fetch anything.
+            Read pr.diff to see what changed. Read pr.files to get accurate
+            line numbers for inline comments. Review against
+            .claude/agents/pr-code-reviewer.md. Write review.json.
+            Do not use Bash. Do not fetch anything.
           show_full_output: true
           claude_args: "--model claude-haiku-4-5 --max-turns 10 --allowed-tools Read,Write"
       - name: Submit review
@@ -41,7 +55,7 @@ jobs:
             REVIEW=$(cat review.json)
             BODY=$(echo "$REVIEW" | jq \
               '{event, body} + if .comments then {comments} else {} end')
-            echo "=== Merged payload ==="
+            echo "=== Payload ==="
             echo "$BODY" | jq .
             echo "=== API response ==="
             curl -s -w "\nHTTP %{http_code}" -X POST \
@@ -52,5 +66,4 @@ jobs:
             echo ""
           else
             echo "review.json not found"
-            ls -la review.json 2>/dev/null || true
           fi
