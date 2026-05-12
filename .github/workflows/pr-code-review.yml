@@ -36,11 +36,17 @@ jobs:
         if: always()
         run: |
           if [ -f review.json ]; then
-            curl -s -X POST \
+            echo "=== review.json contents ==="
+            cat review.json
+            echo ""
+            echo "=== curl response ==="
+            curl -s -w "\nHTTP %{http_code}" -X POST \
               -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews" \
               -d "$(cat review.json)"
+            echo ""
           else
-            echo "review.json not found — Claude did not produce a review"
+            echo "review.json not found"
+            ls -la
           fi
