@@ -14,24 +14,47 @@ Refer to and follow ["Claude Code Best Practices"](https://code.claude.com/docs/
 
 ## Project Structure
 
-- **Backend:** Controller → Service → Converter → Repository (N-tier, `com.bookshop.*`)
+- **Backend:** Controller → Service → Mapper (MapStruct) → Repository (N-tier, `com.bookshop.*`)
+- **Path constants:** `ApiRoutes` utility class centralizes all REST paths (`ApiRoutes.PRODUCTS`, `ApiRoutes.USERS`,
+  etc.) — use these instead of hardcoding URL strings
 - **Frontend:** Single-page app in `src/main/resources/static/` (vanilla JS, hash-based routing: `#/products`, `#/bookings`, `#/users`, `#/login`, `#/register`)
+- **Database:** Flyway migrations in `src/main/resources/db/migration/` (not `data.sql`)
 - **UI Tests:** `src/test/java/com/bookshop/ui/` — Playwright + Cucumber page objects, step definitions, hooks, and runner
 - **Feature files:** `src/test/resources/features/smoke/` — Gherkin scenarios (login, authenticated pages, authorization, navigation)
 - **Test config:** `src/test/resources/application.properties` — base URL, Playwright settings, and credentials (`framework.admin-email`, etc.)
 - **Allure log capture:** `AllureLogAppender` (Logback appender) buffers per-thread logs; `CucumberHooks.attachScenarioLogs()` flushes them into Allure attachments after each scenario
 - **Credentials:** never hardcoded — read from `FrameworkConfig` which maps from `application.properties`
 
+## Domain
+
+| Entity      | Key Fields                                                            | Relationships                         |
+|-------------|-----------------------------------------------------------------------|---------------------------------------|
+| **User**    | name, email (unique), password, role (CUSTOMER/MANAGER/ADMINISTRATOR) | OneToMany → Booking                   |
+| **Product** | title, author, description, price, quantity                           | OneToMany → Booking                   |
+| **Booking** | quantity, status (PENDING→APPROVED/REJECTED/CANCELLED), createdAt     | ManyToOne → User, ManyToOne → Product |
+
+## Security
+
+Filter chain order: `RateLimitFilter` (Bucket4j) → `JwtAuthFilter` (JJWT 0.13.0) → Spring Security
+
+- JWT stateless sessions, BCrypt password encoding, OWASP HTML sanitization on inputs
+- Method-level authorization via `@PreAuthorize` / `@Secured` (roles: CUSTOMER, MANAGER, ADMINISTRATOR)
+- `@ValidPassword` custom constraint enforces password strength rules on registration
+- `/api/auth/**` is public; all other `/api/**` require authentication
+
 ## Test Commands
 
-| Command | Scope |
-|---|---|
-| `./mvnw test` | Unit + integration (default) |
-| `./mvnw test -Punit` | Unit only (*ServiceTest, *Test, excluding *IntegrationTest) |
-| `./mvnw test -Pint` | Integration only (*IntegrationTest, requires Docker) |
-| `./mvnw test -Pui` | UI smoke only (*Runner: Playwright + Cucumber) |
-| `./mvnw verify` | All tests + JaCoCo coverage thresholds |
-| `./mvnw allure:serve` | Generate and view Allure report |
+| Command                                  | Scope                                                            |
+|------------------------------------------|------------------------------------------------------------------|
+| `./mvnw test`                            | Unit + integration (default)                                     |
+| `./mvnw -Dtest=ClassName test`           | Run a single test class                                          |
+| `./mvnw test -Punit`                     | Unit only (*ServiceTest, *Test, excluding *IntegrationTest)      |
+| `./mvnw test -Pint`                      | Integration only (*IntegrationTest, requires Docker)             |
+| `./mvnw test -Pui`                       | UI smoke only (*Runner: Playwright + Cucumber)                   |
+| `./mvnw verify`                          | All tests + JaCoCo coverage thresholds (≥70% instr, ≥50% branch) |
+| `./mvnw test -Pcheckstyle`               | Run Checkstyle validation only                                   |
+| `./mvnw validate test -Punit,checkstyle` | Validate + unit tests + Checkstyle (useful before commits)       |
+| `./mvnw allure:serve`                    | Generate and view Allure report                                  |
 
 ---
 
@@ -91,7 +114,7 @@ Refer to and follow ["Claude Code Best Practices"](https://code.claude.com/docs/
 - **Do NOT skip Plan Mode** except for trivial changes.
 - Do not propose or submit unverified or broken solutions.
 - If verification fails or solution is poor, be proactive: drop the current approach, clear unnecessary context, and begin again with a revised plan.
-- No repository lookups in mappers.
+- No repository lookups in MapStruct mappers (`com.bookshop.mapper`).
 - Do not change endpoint paths, code structures, or conventions without explicit instruction.
 - Do not bloat context; reference rather than paste.
 - **Never use wildcard imports** (`import foo.*;` or `import static foo.Assertions.*;`). Always import each class/static member individually. This is enforced by Checkstyle (`AvoidStarImport`).

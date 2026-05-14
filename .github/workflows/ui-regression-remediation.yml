@@ -1,0 +1,257 @@
+name: UI Regression Remediation
+
+on:
+  workflow_run:
+    workflows: [ "Daily Regression" ]
+    types: [ completed ]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Run ID of the failed Daily Regression workflow (leave empty to use latest failed run)'
+        required: false
+        default: ''
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' || github.event_name == 'workflow_dispatch' }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute run URL
+        run: |
+          if [ -n "${{ github.event.workflow_run.html_url || '' }}" ]; then
+            echo "RUN_URL=${{ github.event.workflow_run.html_url }}" >> "$GITHUB_ENV"
+          else
+            echo "RUN_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Ensure labels exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for label in ui-regression flaky-test; do
+            gh label create "$label" --color "d73a4a" --description "Automated daily regression remediation" 2>/dev/null || true
+          done
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright MCP
+        run: npm install -g @playwright/mcp@0.0.75
+
+      - name: Download chromium Allure results
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: daily-regression.yml
+          run_id: ${{ github.event.inputs.run_id || '' }}
+          name: allure-results-chromium
+          path: target/allure-results-chromium/
+          if_no_artifact_found: warn
+
+      - name: Gate — check for chromium artifact
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -d "target/allure-results-chromium" ] || [ -z "$(ls -A target/allure-results-chromium/ 2>/dev/null)" ]; then
+            echo "No chromium Allure result artifact found — creating issue and exiting"
+            gh issue create \
+              --title "Daily Regression Failed — No Chromium Artifacts" \
+              --label "ui-regression" \
+              --body "Daily regression run ${{ env.RUN_URL }} failed but the chromium raw Allure results artifact was not found. This may indicate an infrastructure issue or that chromium tests did not run."
+            exit 0
+          fi
+
+      - name: Parse Allure results → failures.json
+        run: |
+          echo '[]' > failures.json
+          for f in target/allure-results-chromium/*-result.json; do
+            jq -r '
+              select(.status == "failed" or .status == "broken")
+              | {browser: "chromium", scenario: .name, fullName: .fullName,
+                 status: .status, statusMessage: (.statusDetails.message // ""),
+                 statusTrace: (.statusDetails.trace // "")}
+            ' "$f" 2>/dev/null || true
+          done | jq -s '.' > failures.json
+          echo "Parsed $(jq '. | length' failures.json) failure(s)"
+
+      - name: Gate — empty failures
+        run: |
+          if [ "$(jq '. | length' failures.json)" -eq 0 ]; then
+            echo "No actionable failures found (no failed/broken test results)"
+            exit 0
+          fi
+
+      - name: Start application
+        run: |
+          ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev &>/tmp/app.log &
+          APP_PID=$!
+          echo "APP_PID=${APP_PID}" >> "$GITHUB_ENV"
+          trap "kill ${APP_PID} 2>/dev/null || true" EXIT
+
+          for i in $(seq 1 30); do
+            if curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/api/products | grep -q '200'; then
+              echo "App ready (iteration $i/30)"
+              break
+            fi
+            sleep 2
+          done
+
+          if ! kill -0 ${APP_PID} 2>/dev/null; then
+            echo "App failed to start" && cat /tmp/app.log
+            exit 1
+          fi
+
+      - name: Run Claude Code remediation
+        id: remediate
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            UI regression remediation task.
+            Read .claude/agents/ui-remediation.md for your instructions.
+            failures.json contains chromium failures to diagnose.
+            Write remediation-result.json with your findings and fixes.
+          claude_args: >
+            --model claude-sonnet-4-6
+            --max-turns 20
+            --allowed-tools "Read,Write(path:src/test/java/com/bookshop/ui/pages/),Bash(mvn:*,curl:*),mcp__playwright*"
+            --mcp-config .claude/mcp/playwright.json
+            --permission-mode acceptEdits
+
+      - name: Validate output
+        id: validate
+        if: always()
+        run: |
+          if [ ! -f remediation-result.json ]; then
+            echo "remediation-result.json not found — agent may have failed"
+            exit 1
+          fi
+          CLASS=$(jq -r '.classification' remediation-result.json)
+          echo "Classification: ${CLASS}"
+          if [[ ! "${CLASS}" =~ ^(ALL_SIMPLE|ALL_COMPLEX|PARTIAL|NO_ACTIONABLE)$ ]]; then
+            echo "Invalid classification: ${CLASS}"
+            exit 1
+          fi
+          echo "CLASSIFICATION=${CLASS}" >> "$GITHUB_ENV"
+
+      - name: Create PR for SIMPLE fixes
+        if: env.CLASSIFICATION == 'ALL_SIMPLE' || env.CLASSIFICATION == 'PARTIAL'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          BRANCH="fix/ui-regression-$(date +%Y-%m-%d)-${{ github.run_id }}"
+          git checkout -b "$BRANCH"
+          git add src/test/java/com/bookshop/ui/pages/
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit (selectors may have been identical)"
+            exit 0
+          fi
+
+          MSG="fix: update UI selectors after DOM changes
+
+          Automated remediation from failed daily regression run ${RUN_URL}
+
+          Co-Authored-By: Claude Code <noreply@anthropic.com>"
+          git commit -m "$MSG"
+
+          git push origin "$BRANCH"
+
+          echo "## Automated UI Selector Fix (Chromium)" > pr-body.md
+          echo "" >> pr-body.md
+          echo "**Run:** ${{ env.RUN_URL }}" >> pr-body.md
+          echo "" >> pr-body.md
+          echo "### Changes" >> pr-body.md
+
+          jq -r '.failures[] | select(.status == "SIMPLE") | "- **\(.file)** — `\(.oldSelector)` → `\(.newSelector)`\n  \(.rationale)"' \
+            remediation-result.json >> pr-body.md
+
+          echo "" >> pr-body.md
+          echo "### Human Review Required" >> pr-body.md
+          echo "- [ ] Verify new selectors match intended elements (check Allure screenshots)" >> pr-body.md
+          echo "- [ ] **Run \\\`./mvnw test -Pui\\\` locally — verify fix works on firefox and webkit too**" >> pr-body.md
+          echo "- [ ] This fix was verified on chromium only by the automated remediation" >> pr-body.md
+
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "fix: update UI selectors after DOM changes" \
+            --body-file pr-body.md
+
+      - name: Create issue for COMPLEX failures
+        if: env.CLASSIFICATION == 'ALL_COMPLEX' || env.CLASSIFICATION == 'PARTIAL'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "## UI Regression Failure — Manual Triage Required" > issue-body.md
+          echo "" >> issue-body.md
+          echo "**Run:** ${{ env.RUN_URL }}" >> issue-body.md
+          echo "" >> issue-body.md
+          echo "### Failed Scenarios (Chromium)" >> issue-body.md
+
+          jq -r '.failures[] | select(.status == "COMPLEX") | "#### \(.scenario)\n- **Rationale:** \(.rationale)\n"' \
+            remediation-result.json >> issue-body.md
+
+          echo "" >> issue-body.md
+          echo "### Suggested Next Steps" >> issue-body.md
+          echo "1. Download the Allure report from the daily regression run" >> issue-body.md
+          echo "2. Inspect the failing page to understand what changed" >> issue-body.md
+          echo "3. Update page objects in \\\`src/test/java/com/bookshop/ui/pages/\\\`" >> issue-body.md
+          echo "4. Run \\\`./mvnw test -Pui\\\` locally to verify" >> issue-body.md
+
+          gh issue create \
+            --title "UI Regression Failure — Manual Triage ($(date +%Y-%m-%d))" \
+            --label "ui-regression" \
+            --body-file issue-body.md
+
+      - name: Create issue for FLAKY tests
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FLAKY_COUNT=$(jq '[.failures[] | select(.status == "FLAKY")] | length' remediation-result.json 2>/dev/null || echo "0")
+          if [ "${FLAKY_COUNT}" -gt 0 ]; then
+            echo "## Flaky UI Tests Detected" > flaky-body.md
+            echo "" >> flaky-body.md
+            echo "**Run:** ${{ env.RUN_URL }}" >> flaky-body.md
+            echo "" >> flaky-body.md
+
+            jq -r '.failures[] | select(.status == "FLAKY") | "- **\(.scenario)** (\(.browser)) — \(.rationale)"' \
+              remediation-result.json >> flaky-body.md
+
+            echo "" >> flaky-body.md
+            echo "These tests failed during the regression run but the existing selectors were confirmed to still work during remediation. The failures may be caused by timing or load issues." >> flaky-body.md
+
+            gh issue create \
+              --title "Flaky UI Tests Detected — $(date +%Y-%m-%d)" \
+              --label "flaky-test" \
+              --body-file flaky-body.md
+          fi
+
+      - name: Publish remediation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: remediation-artifacts
+          path: |
+            failures.json
+            remediation-result.json
