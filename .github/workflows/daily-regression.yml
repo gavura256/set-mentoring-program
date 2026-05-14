@@ -3,6 +3,7 @@ name: Daily Regression
 on:
   schedule:
     - cron: '0 3 * * *'
+  workflow_dispatch:
 
 jobs:
   ui-regression:
@@ -37,6 +38,13 @@ jobs:
         with:
           name: allure-report-${{ matrix.browser }}
           path: target/site/allure-maven-plugin/
+
+      - name: Publish Raw Allure Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.browser }}
+          path: target/allure-results/
 
       - name: Publish Failure Screenshots
         if: failure()

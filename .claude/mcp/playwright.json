@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "playwright-mcp",
+      "args": [
+        "--browser=chromium",
+        "--headless",
+        "--caps=testing"
+      ]
+    }
+  }
+}
