@@ -28,6 +28,13 @@ jobs:
       - name: UI Smoke Tests
         run: ./mvnw test -Pui -Dframework.browser=${{ matrix.browser }} -B
 
+      - name: Publish Raw Allure Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-${{ matrix.browser }}
+          path: target/allure-results/
+
       - name: Generate Allure Report
         if: always()
         run: ./mvnw allure:report -B
@@ -38,13 +45,6 @@ jobs:
         with:
           name: allure-report-${{ matrix.browser }}
           path: target/site/allure-maven-plugin/
-
-      - name: Publish Raw Allure Results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results-${{ matrix.browser }}
-          path: target/allure-results/
 
       - name: Publish Failure Screenshots
         if: failure()
