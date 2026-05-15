@@ -182,9 +182,7 @@ jobs:
 
           MSG="fix: update UI selectors after DOM changes
 
-          Automated remediation from failed daily regression run ${RUN_URL}
-
-          Co-Authored-By: Claude Code <noreply@anthropic.com>"
+          Automated remediation from failed daily regression run ${RUN_URL}"
           git commit -m "$MSG"
 
           git push origin "$BRANCH"
