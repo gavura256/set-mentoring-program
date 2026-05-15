@@ -40,15 +40,22 @@ jobs:
       - name: Submit review
         if: always()
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+a          GH_TOKEN: ${{ secrets.PR_REVIEW_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           if [ -f review.txt ]; then
             EVENT=$(head -1 review.txt | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
             tail -n +3 review.txt > review-body.txt
             echo "=== Event: $EVENT ==="
             cat review-body.txt
-            gh pr review ${{ github.event.pull_request.number }} \
-              --${EVENT} --body-file review-body.txt
+            if gh pr review ${{ github.event.pull_request.number }} \
+              --${EVENT} --body-file review-body.txt 2>review-err.log; then
+              echo "Review submitted successfully"
+            else
+              echo "Review failed (likely self-review restriction) — posting as comment"
+              cat review-err.log
+              sed -i "1s/^/## Review: ${EVENT}\n\n/" review-body.txt
+              gh pr comment ${{ github.event.pull_request.number }} --body-file review-body.txt
+            fi
           else
             echo "review.txt not found"
           fi
