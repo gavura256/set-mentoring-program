@@ -40,7 +40,7 @@ jobs:
       - name: Submit review
         if: always()
         env:
-a          GH_TOKEN: ${{ secrets.PR_REVIEW_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PR_REVIEW_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           if [ -f review.txt ]; then
             EVENT=$(head -1 review.txt | tr '[:upper:]' '[:lower:]' | sed 's/_/-/g')
