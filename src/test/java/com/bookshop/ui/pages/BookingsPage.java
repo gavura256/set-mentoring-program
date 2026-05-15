@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BookingsPage extends BasePage {
 
-    private static final String TABLE_SELECTOR = "#bookings-body table1";
+    private static final String TABLE_SELECTOR = "#bookings-body table";
     private static final String ROWS_SELECTOR   = TABLE_SELECTOR + " tbody tr";
     private static final String STATUS_SELECTOR = "select.status-select";
     private static final String CANCELLED_VALUE = "CANCELLED";
