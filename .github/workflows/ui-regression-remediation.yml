@@ -24,10 +24,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Compute run ID
+        id: run-id
+        run: |
+          if [ -n "${{ github.event.workflow_run.id || '' }}" ]; then
+            echo "RUN_ID=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ github.event.inputs.run_id || '' }}" ]; then
+            echo "RUN_ID=${{ github.event.inputs.run_id }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "RUN_ID=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Compute run URL
         run: |
           if [ -n "${{ github.event.workflow_run.html_url || '' }}" ]; then
             echo "RUN_URL=${{ github.event.workflow_run.html_url }}" >> "$GITHUB_ENV"
+          elif [ -n "${{ steps.run-id.outputs.RUN_ID }}" ]; then
+            echo "RUN_URL=https://github.com/${{ github.repository }}/actions/runs/${{ steps.run-id.outputs.RUN_ID }}" >> "$GITHUB_ENV"
           else
             echo "RUN_URL=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> "$GITHUB_ENV"
           fi
@@ -57,7 +70,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v6
         with:
           workflow: daily-regression.yml
-          run_id: ${{ github.event.inputs.run_id || '' }}
+          run_id: ${{ steps.run-id.outputs.RUN_ID }}
           name: allure-results-chromium
           path: target/allure-results-chromium/
           if_no_artifact_found: warn
