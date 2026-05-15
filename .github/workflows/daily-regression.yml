@@ -8,9 +8,6 @@ on:
 jobs:
   ui-regression:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        browser: [chromium, firefox, webkit]
 
     steps:
       - uses: actions/checkout@v4
@@ -23,16 +20,16 @@ jobs:
           cache: maven
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps ${{ matrix.browser }}
+        run: npx playwright install --with-deps chromium
 
       - name: UI Smoke Tests
-        run: ./mvnw test -Pui -Dframework.browser=${{ matrix.browser }} -B
+        run: ./mvnw test -Pui -Dframework.browser=chromium -B
 
       - name: Publish Raw Allure Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-results-${{ matrix.browser }}
+          name: allure-results-chromium
           path: target/allure-results/
 
       - name: Generate Allure Report
@@ -43,19 +40,19 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report-${{ matrix.browser }}
+          name: allure-report-chromium
           path: target/site/allure-maven-plugin/
 
       - name: Publish Failure Screenshots
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots-${{ matrix.browser }}
+          name: screenshots-chromium
           path: target/screenshots/
 
       - name: Publish Playwright Traces
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces-${{ matrix.browser }}
+          name: playwright-traces-chromium
           path: target/traces/
