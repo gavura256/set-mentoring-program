@@ -141,7 +141,7 @@ jobs:
             failures.json contains chromium failures to diagnose.
             Write remediation-result.json with your findings and fixes.
           claude_args: >
-            --model claude-sonnet-4-6
+            --model claude-haiku-4-5
             --max-turns 20
             --allowed-tools "Read,Write(path:src/test/java/com/bookshop/ui/pages/),Bash(mvn:*,curl:*),mcp__playwright*"
             --mcp-config .claude/mcp/playwright.json
