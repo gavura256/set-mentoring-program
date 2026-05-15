@@ -1,6 +1,8 @@
 name: Daily Regression
 
 on:
+  schedule:
+    - cron: '0 3 * * 5'
   workflow_dispatch:
 
 jobs:
